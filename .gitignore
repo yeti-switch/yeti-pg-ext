@@ -1,0 +1,6 @@
+debian/control
+debian/files
+debian/postgresql*
+debian/*debhelper*
+*.o
+*.so

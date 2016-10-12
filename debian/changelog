@@ -1,0 +1,35 @@
+yeti (1.2.2) stable; urgency=medium
+
+  * 3aa6de5 add rank_dns_srv window function
+
+ -- Michael Furmur <m.furmur@gmail.com>  Wed, 12 Oct 2016 12:05:01 +0300
+
+yeti (1.2.1) stable; urgency=medium
+
+  * regexp_replace_rand() functions 
+
+ -- Michael Furmur <m.furmur@gmail.com>  Sat, 26 Mar 2016 21:34:10 +0300
+
+yeti (1.2.0) stable; urgency=medium
+
+  * lnp tags support
+
+ -- Michael Furmur <m.furmur@gmail.com>  Tue, 29 Sep 2015 00:24:51 +0300
+
+yeti (1.1.2) stable; urgency=medium
+
+  * lnp functions refactoring
+
+ -- Michael Furmur <m.furmur@gmail.com>  Fri, 03 Apr 2015 13:52:17 +0300
+
+yeti (1.1.1) stable; urgency=medium
+
+  * Add function name prefix for logging
+
+ -- Michael Furmur <m.furmur@gmail.com>  Wed, 01 Apr 2015 15:30:07 +0300
+
+yeti (1.1.0-2) stable; urgency=medium
+
+  * Initial
+
+ -- Michael Furmur <m.furmur@gmail.com>  Sun, 27 Jul 2014 11:10:10 +0200

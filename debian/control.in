@@ -1,0 +1,14 @@
+Source: yeti
+Section: database
+Priority: extra
+Maintainer: Michael Furmur <m.furmur@gmail.com>
+Build-Depends: debhelper (>= 7.0.50~), postgresql-server-dev-all (>= 158~), libnanomsg-dev
+Standards-Version: 3.9.5
+
+Package: postgresql-PGVERSION-yeti
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, postgresql-PGVERSION
+Description: provides YETI extension for PostgreSQL
+ This PostgreSQL module provides functions for LNP and few helper functions
+ for yeti manamgement database layer
+
