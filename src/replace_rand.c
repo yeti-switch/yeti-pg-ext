@@ -62,11 +62,11 @@ text *replace(text *in, bool *replaced){
 		}
 
 		if(value < RAND_MIN_LEN){
-			dbg("random string len(%lu) is less then min(%d). set it to %d",
+			dbg("random string len(%ld) is less then min(%d). set it to %d",
 				value,RAND_MIN_LEN,RAND_MIN_LEN);
 			value = RAND_MIN_LEN;
 		} else if(value > RAND_MAX_LEN){
-			dbg("random string len(%lu) is greater then max(%d). set it to %d",
+			dbg("random string len(%ld) is greater then max(%d). set it to %d",
 				value,RAND_MAX_LEN,RAND_MAX_LEN);
 			value = RAND_MAX_LEN;
 		}
