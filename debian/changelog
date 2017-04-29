@@ -1,3 +1,9 @@
+yeti (1.2.2p1) stable; urgency=medium
+
+  * replace_rand: check r() placeholder argument to be within range [0,64]
+
+ -- Michael Furmur <m.furmur@gmail.com>  Sat, 29 Apr 2017 12:48:18 +0300
+
 yeti (1.2.2) stable; urgency=medium
 
   * 3aa6de5 add rank_dns_srv window function

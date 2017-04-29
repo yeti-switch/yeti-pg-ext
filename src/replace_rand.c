@@ -9,6 +9,9 @@
 #define RAND_START_LEN 2
 #define RAND_END   ')'
 
+#define RAND_MIN_LEN 0
+#define RAND_MAX_LEN 64
+
 #define CACHE_SIZE_INC_START 4
 #define CACHE_SIZE_INC_SCALE 2
 #define CACHE_SIZE_INC_MAX   64
@@ -56,6 +59,16 @@ text *replace(text *in, bool *replaced){
 		if(1!=sscanf(p2+RAND_START_LEN,"%ld",&value)){
 			dbg("can't parse placeholder argument '%.*s'. skip",(int)(p3-p2-RAND_START_LEN),p2+RAND_START_LEN);
 			continue;
+		}
+
+		if(value < RAND_MIN_LEN){
+			dbg("random string len(%lu) is less then min(%d). set it to %d",
+				value,RAND_MIN_LEN,RAND_MIN_LEN);
+			value = RAND_MIN_LEN;
+		} else if(value > RAND_MAX_LEN){
+			dbg("random string len(%lu) is greater then max(%d). set it to %d",
+				value,RAND_MAX_LEN,RAND_MAX_LEN);
+			value = RAND_MAX_LEN;
 		}
 
 		n++;
