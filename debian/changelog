@@ -1,3 +1,9 @@
+yeti (1.2.2p3) stable; urgency=medium
+
+  * allow empty input for regexp_replace_rand
+
+ -- Michael Furmur <m.furmur@gmail.com>  Tue, 02 Jan 2018 14:01:59 +0200
+
 yeti (1.2.2p2) stable; urgency=medium
 
   * replace_rand: adjust loglevels

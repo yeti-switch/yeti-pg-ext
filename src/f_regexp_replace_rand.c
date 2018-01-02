@@ -38,10 +38,10 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 		return get_in_copy(fcinfo);
 	}
 
-	if(VARSIZE(PG_GETARG_DATUM(ARG_IN))==VARHDRSZ){
+	/*if(VARSIZE(PG_GETARG_DATUM(ARG_IN))==VARHDRSZ){
 		dbg("input is empty. return input");
 		return get_in_copy(fcinfo);
-	}
+	}*/
 
 	if(VARSIZE(PG_GETARG_DATUM(ARG_RULE))==VARHDRSZ){
 		dbg("rule is empty. return input");
@@ -114,10 +114,10 @@ Datum regexp_replace_rand(PG_FUNCTION_ARGS)
 		return get_in_copy(fcinfo);
 	}
 
-	if(VARSIZE(PG_GETARG_DATUM(ARG_IN))==VARHDRSZ){
+	/*if(VARSIZE(PG_GETARG_DATUM(ARG_IN))==VARHDRSZ){
 		dbg("input is empty. return input");
 		return get_in_copy(fcinfo);
-	}
+	}*/
 
 	if(VARSIZE(PG_GETARG_DATUM(ARG_RULE))==VARHDRSZ){
 		dbg("rule is empty. return input");
