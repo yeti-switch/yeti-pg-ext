@@ -1,4 +1,4 @@
-Source: yeti
+Source: yeti-pg-ext
 Section: database
 Priority: extra
 Maintainer: Michael Furmur <m.furmur@gmail.com>
