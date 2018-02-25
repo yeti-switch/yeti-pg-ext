@@ -7,7 +7,7 @@ yeti-pg-ext is a part of project [Yeti]
 ### install build dependencies
 
 ```sh
-# aptitude install libnanomsg-dev postgresql-server-dev-all dh-make devscripts
+# aptitude install libnanomsg-dev postgresql-server-dev-all dh-make devscripts pkg-config
 ```
 
 ### get sources & build
