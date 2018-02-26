@@ -226,7 +226,7 @@ fi
 
 cat >>Dockerfile <<EOF
 RUN apt-get update && apt-get dist-upgrade --yes
-RUN apt-get install --yes --no-install-recommends build-essential devscripts git-buildpackage ca-certificates debhelper fakeroot lintian ${EXTRA_PACKAGES}
+RUN apt-get install --yes --no-install-recommends build-essential devscripts pkg-config git-buildpackage ca-certificates debhelper fakeroot lintian ${EXTRA_PACKAGES}
 
 WORKDIR $(pwd)
 COPY . .
