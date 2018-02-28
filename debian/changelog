@@ -1,3 +1,9 @@
+yeti-pg-ext (1.2.3) stable; urgency=medium
+
+  * change volatility for replace_rand() and regexp_replace_rand() to VOLATILE
+
+ -- Michael Furmur <m.furmur@gmail.com>  Wed, 28 Feb 2018 11:48:45 +0200
+
 yeti-pg-ext (1.2.2p4) stable; urgency=medium
 
   * pkg: fix source name
