@@ -11,7 +11,7 @@
 #define GET_ARRAY_ITERATOR(a) array_create_iterator(a,0);
 #endif
 
-inline bool set_contains_value(Datum *s, int end_pos, Datum value) {
+inline static bool set_contains_value(Datum *s, int end_pos, Datum value) {
     while(end_pos >= 0) {
         if(DatumGetInt32(s[end_pos])==DatumGetInt32(value))
             return true;
