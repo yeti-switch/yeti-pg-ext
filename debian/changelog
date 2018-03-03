@@ -1,3 +1,9 @@
+yeti-pg-ext (1.3.0) stable; urgency=medium
+
+  * add tag_action and tag_compare functions
+
+ -- Michael Furmur <m.furmur@gmail.com>  Sat, 03 Mar 2018 15:27:20 +0200
+
 yeti-pg-ext (1.2.3) stable; urgency=medium
 
   * change volatility for replace_rand() and regexp_replace_rand() to VOLATILE

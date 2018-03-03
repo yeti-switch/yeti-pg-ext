@@ -17,5 +17,8 @@ Datum lnp_timeout_set(PG_FUNCTION_ARGS);
 
 Datum rank_dns_srv(PG_FUNCTION_ARGS);
 
+Datum tag_action(PG_FUNCTION_ARGS);
+Datum tag_compare(PG_FUNCTION_ARGS);
+
 void _PG_init(void);
 void _PG_fini(void);
