@@ -76,7 +76,7 @@ Datum tag_compare(PG_FUNCTION_ARGS)
         if(set_contains_value(aset,apos,v)) continue;
         aset[++apos] = v;
     }
-    array_free_iterator(it);
+    //array_free_iterator(it);
 
     bset = (Datum *)palloc(b_len * sizeof(Datum));
 
@@ -99,7 +99,7 @@ Datum tag_compare(PG_FUNCTION_ARGS)
 
     pfree(aset);
     pfree(bset);
-    array_free_iterator(it);
+    //array_free_iterator(it);
 
     if(ret==RET_MATCHED_WITHOUT_NULL && apos==bpos) {
         ret = RET_MATCHED_EXACTLY;

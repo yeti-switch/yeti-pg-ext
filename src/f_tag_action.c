@@ -73,7 +73,7 @@ Datum tag_action(PG_FUNCTION_ARGS)
             if(set_contains_value(aset,apos,v)) continue;
             aset[++apos] = v;
         }
-        array_free_iterator(it);
+        //array_free_iterator(it);
         break;
 
     default:
@@ -100,7 +100,7 @@ Datum tag_action(PG_FUNCTION_ARGS)
             if(set_contains_value(bset,bpos,v)) continue;
             bset[++bpos] = v;
         }
-        array_free_iterator(it);
+        //array_free_iterator(it);
 
         if(bpos < 0) {
             //empty b_set. we can return aset immediately
@@ -140,7 +140,7 @@ Datum tag_action(PG_FUNCTION_ARGS)
             if(set_contains_value(aset,apos,v)) continue;
             aset[++apos] = v;
         }
-        array_free_iterator(it);
+        //array_free_iterator(it);
 
         if(apos < 0 ) {
             pfree(aset);
@@ -165,7 +165,7 @@ Datum tag_action(PG_FUNCTION_ARGS)
             if(!set_contains_value(aset,apos,v)) continue;
             rset[++rpos] = v;
         }
-        array_free_iterator(it);
+        //array_free_iterator(it);
 
         pfree(aset);
 
