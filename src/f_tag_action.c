@@ -45,6 +45,15 @@ Datum tag_action(PG_FUNCTION_ARGS)
     ArrayType *r, *a, *b;
     Datum *aset, *bset, *rset, v;
 
+    if(PG_ARGISNULL(ARG_A) || PG_ARGISNULL(ARG_B)) {
+        PG_RETURN_NULL();
+    }
+
+    if(PG_ARGISNULL(ARG_OP)) {
+        //return copy of the array a is action is NULL
+        PG_RETURN_ARRAYTYPE_P(DatumGetArrayTypePCopy(PG_GETARG_ARRAYTYPE_P(ARG_A)));
+    }
+
     op = PG_GETARG_INT32(ARG_OP);
 
     switch(op) {
