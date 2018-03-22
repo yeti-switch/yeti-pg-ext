@@ -35,7 +35,8 @@ Datum tag_action(PG_FUNCTION_ARGS)
         OP_CLEAR = 1,
         OP_REMOVE,
         OP_APPEND,
-        OP_INTERSECTION
+        OP_INTERSECTION,
+        OP_REPLACE
     };
 
     bool is_null;
@@ -50,7 +51,7 @@ Datum tag_action(PG_FUNCTION_ARGS)
     }
 
     if(PG_ARGISNULL(ARG_OP)) {
-        //return copy of the array a is action is NULL
+        //return copy of the array a if action is NULL
         PG_RETURN_ARRAYTYPE_P(DatumGetArrayTypePCopy(PG_GETARG_ARRAYTYPE_P(ARG_A)));
     }
 
@@ -61,6 +62,11 @@ Datum tag_action(PG_FUNCTION_ARGS)
     case OP_CLEAR:
 
         PG_RETURN_ARRAYTYPE_P((construct_empty_array(INT4OID)));
+
+    case OP_REPLACE:
+
+        //return the copy of the array b
+        PG_RETURN_ARRAYTYPE_P(DatumGetArrayTypePCopy(PG_GETARG_ARRAYTYPE_P(ARG_B)));
 
     case OP_REMOVE:
     case OP_APPEND:
