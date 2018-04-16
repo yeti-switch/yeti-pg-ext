@@ -26,7 +26,8 @@ Datum tag_compare(PG_FUNCTION_ARGS)
 {
     enum args_idx {
         ARG_A = 0,
-        ARG_B
+        ARG_B,
+        ARG_MATCHING_MODE
     };
 
     enum result_code {
@@ -36,9 +37,15 @@ Datum tag_compare(PG_FUNCTION_ARGS)
         RET_MATCHED_EXACTLY
     };
 
+    enum matching_mode {
+        MATCH_MODE_OR = 0,
+        MATCH_MODE_AND
+    };
+
     ArrayType *a, *b;
     ArrayIterator it;
-    Datum *aset, *bset, v;
+    Datum *aset, *bset, *d, v;
+    short int match_mode;
 
     bool is_null, a_has_null;
     int ret, apos, bpos, a_len, b_len;
@@ -48,6 +55,21 @@ Datum tag_compare(PG_FUNCTION_ARGS)
 
     if(PG_ARGISNULL(ARG_B))
         PG_RETURN_INT32(RET_NOT_MATCHED);
+
+    if(PG_NARGS() <= ARG_MATCHING_MODE) {
+        match_mode = MATCH_MODE_OR;
+    } else {
+        if(PG_ARGISNULL(ARG_MATCHING_MODE)) match_mode = MATCH_MODE_OR;
+        else match_mode = PG_GETARG_INT16(ARG_MATCHING_MODE);
+    }
+
+    switch(match_mode) {
+    case MATCH_MODE_OR:
+    case MATCH_MODE_AND:
+        break;
+    default:
+        err("unknown matching mode: %d",match_mode);
+    }
 
     a = PG_GETARG_ARRAYTYPE_P(ARG_A);
     a_len = ArrayGetNItems(ARR_NDIM(a), ARR_DIMS(a));
@@ -76,7 +98,6 @@ Datum tag_compare(PG_FUNCTION_ARGS)
         if(set_contains_value(aset,apos,v)) continue;
         aset[++apos] = v;
     }
-    //array_free_iterator(it);
 
     bset = (Datum *)palloc(b_len * sizeof(Datum));
 
@@ -88,22 +109,34 @@ Datum tag_compare(PG_FUNCTION_ARGS)
         if(!set_contains_value(aset,apos,v)) {
             if(a_has_null) {
                 ret = RET_MATCHED_WITH_NULL;
+                if(match_mode != MATCH_MODE_AND)
+                    break;
+            } else {
+                ret = RET_NOT_MATCHED;
                 break;
             }
-            ret = RET_NOT_MATCHED;
-            break;
         }
         if(!set_contains_value(bset,bpos,v))
             bset[++bpos] = v;
     }
 
-    pfree(aset);
-    pfree(bset);
-    //array_free_iterator(it);
-
     if(ret==RET_MATCHED_WITHOUT_NULL && apos==bpos) {
         ret = RET_MATCHED_EXACTLY;
     }
+
+    if(match_mode == MATCH_MODE_AND && (apos > -1)) {
+        //additional check for aset entries existence in bset
+        d = aset+apos;
+        do {
+            if(set_contains_value(bset,bpos,*d))
+                continue;
+            ret = RET_NOT_MATCHED;
+            break;
+        } while(d-- > aset);
+    }
+
+    pfree(aset);
+    pfree(bset);
 
     PG_RETURN_INT32(ret);
 }
