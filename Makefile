@@ -8,7 +8,15 @@ DATA = $(wildcard *.sql)
 
 PGVER = $(shell echo $(VERSION) | awk -F. '{ print $$1*100+$$2 }')
 PG_CPPFLAGS  = -DPGVER=$(PGVER)
-SHLIB_LINK = $(shell pkg-config libnanomsg --libs-only-l)
+
+UNAME = $(shell uname -s)
+ifeq ($(UNAME),Darwin)
+    NANOMSG = nanomsg
+else
+    NANOMSG = libnanomsg
+endif
+
+SHLIB_LINK = $(shell pkg-config $(NANOMSG) --libs-only-l)
 
 PG_CONFIG ?= pg_config
 PGXS = $(shell $(PG_CONFIG) --pgxs)
