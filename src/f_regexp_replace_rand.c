@@ -224,8 +224,11 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 	if(result_token_pos) {
 		replace_arg(fcinfo, ARG_RESULT, result_chunk, result_ptr, result_token_pos);
 	}
-	if(n && !result_token_pos) {
-		replace_arg(fcinfo, ARG_RESULT, result_chunk, result_ptr, result_end);
+	if(n) {
+		replace_arg(fcinfo, ARG_RULE, rule_chunk, rule_ptr, rule_end);
+		if(!result_token_pos) {
+			replace_arg(fcinfo, ARG_RESULT, result_chunk, result_ptr, result_end);
+		}
 	}
 	ret = apply_textregexreplace_noopt(fcinfo,&matched,true);
 
