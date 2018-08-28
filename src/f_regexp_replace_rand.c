@@ -59,7 +59,8 @@ static Datum apply_textregexreplace_noopt(PG_FUNCTION_ARGS, bool *matched, bool 
 	wide_pattern = (pg_wchar *) palloc(sizeof(pg_wchar) * (orig_len + 1));
 	wide_pattern_len = pg_mb2wchar_with_len(VARDATA_ANY(pattern), wide_pattern, orig_len);
 
-	reg_result = pg_regcomp(&match_regexp,wide_pattern,wide_pattern_len,0,PG_GET_COLLATION());
+	reg_result = pg_regcomp(&match_regexp,wide_pattern,wide_pattern_len,
+							REG_ADVANCED,PG_GET_COLLATION());
 	if(reg_result != REG_OKAY) {
 		pfree(wide_pattern);
 		return ret;
