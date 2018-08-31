@@ -10,6 +10,7 @@
 
 #define REGEXP_SPLIT_TOKEN "||"
 #define REGEXP_SPLIT_TOKEN_LEN 2
+#define REGEXP_SPLIT_MAX_TOKENS 10
 
 //regexp_replace(in,rule,result,opt) args indexes
 enum {
@@ -208,6 +209,10 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 		}
 
 		n++;
+
+		if(n >= REGEXP_SPLIT_MAX_TOKENS-1) {
+			goto out;
+		}
 
 		rule_ptr = rule_token_pos+REGEXP_SPLIT_TOKEN_LEN;
 		if(rule_ptr >= rule_end) {

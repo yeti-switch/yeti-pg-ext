@@ -1,3 +1,9 @@
+yeti-pg-ext (1.3.2p4) stable; urgency=medium
+
+  * regexp_replace_rand(text,text,text): limit regexp chunks to parse count to 10
+
+ -- Michael Furmur <m.furmur@gmail.com>  Fri, 31 Aug 2018 09:55:11 +0300
+
 yeti-pg-ext (1.3.2p3) stable; urgency=medium
 
   * regexp_replace_rand(text,text,text): fix preliminary matching. compile regexp with REG_ADVANCED flag
