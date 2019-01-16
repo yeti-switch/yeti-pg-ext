@@ -62,7 +62,7 @@ text *replace(text *in, bool *replaced){
 			continue;
 		}
 
-		p3 = memchr(p2+2,RAND_END,s_end-p2-2);
+		p3 = memchr(p2+RAND_START_LEN,RAND_END,s_end-p2-RAND_START_LEN);
 		if(NULL==p3){
 			dbg("no closing bracket for placeholder started at position %ld. skip",p2-p);
 			p = p2+RAND_START_LEN;
