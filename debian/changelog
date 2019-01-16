@@ -1,3 +1,9 @@
+yeti-pg-ext (1.3.2p5) stable; urgency=medium
+
+  * 59237f replace_rand: fix searching in not null-terminated strings that caused segfaults
+
+ -- Michael Furmur <m.furmur@gmail.com>  Wed, 16 Jan 2019 23:19:08 +0200
+
 yeti-pg-ext (1.3.2p4) stable; urgency=medium
 
   * regexp_replace_rand(text,text,text): limit regexp chunks to parse count to 10
