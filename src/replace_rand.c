@@ -5,8 +5,10 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#define RAND_START "r("
+#define RAND_START_1 'r'
+#define RAND_START_2 '('
 #define RAND_START_LEN 2
+#define RAND_COMPLETED_MIN_LEN 4 //r(1)
 #define RAND_END   ')'
 
 #define RAND_MIN_LEN 0
@@ -45,12 +47,28 @@ text *replace(text *in, bool *replaced){
 	s_end = s+s_len;
 
 	//find all placeholders. store them to dynamic cache
-	while((p2 = strstr(p, RAND_START))!=NULL){
-		p3 = strchr(p2+1,RAND_END);
+
+	while((p2 = memchr(p, RAND_START_1,s_end-p))!=NULL) {
+
+		if(p2+RAND_COMPLETED_MIN_LEN > s_end) {
+			break;
+		}
+
+		if(*(p2+1) != RAND_START_2) {
+			p = p2+1;
+			if(p+RAND_COMPLETED_MIN_LEN > s_end) {
+				break;
+			}
+			continue;
+		}
+
+		p3 = memchr(p2+2,RAND_END,s_end-p2-2);
 		if(NULL==p3){
 			dbg("no closing bracket for placeholder started at position %ld. skip",p2-p);
 			p = p2+RAND_START_LEN;
-			if(p > s_end) break;
+			if(p+RAND_COMPLETED_MIN_LEN > s_end) {
+				break;
+			}
 			continue;
 		}
 
