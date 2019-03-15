@@ -4,3 +4,4 @@ debian/postgresql*
 debian/*debhelper*
 *.o
 *.so
+*.bc
