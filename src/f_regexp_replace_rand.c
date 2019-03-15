@@ -14,12 +14,13 @@
 #define REGEXP_SPLIT_MAX_TOKENS 10
 
 //regexp_replace(in,rule,result,opt) args indexes
-enum {
-	ARG_IN = 0,
-	ARG_RULE,
-	ARG_RESULT,
-	ARG_OPT
-};
+#define ARG_IN 0
+#define ARG_RULE 1
+#define ARG_RESULT 2
+#define ARG_OPT 3
+
+#define OPT_ARG_KEEP_EMPTY 4
+#define NOOPT_ARG_KEEP_EMPTY 3
 
 static inline const char *search_split_token(const char *s, size_t len)
 {
@@ -53,7 +54,7 @@ static inline void replace_arg(PG_FUNCTION_ARGS, int arg_idx, text *t, const cha
 }
 
 
-static Datum apply_textregexreplace_noopt(PG_FUNCTION_ARGS, bool *matched, bool final)
+static Datum apply_textregexreplace_noopt(PG_FUNCTION_ARGS, bool *matched, bool final, bool keep_empty)
 {
 	Datum ret;
 	ErrorData *e;
@@ -106,7 +107,7 @@ static Datum apply_textregexreplace_noopt(PG_FUNCTION_ARGS, bool *matched, bool 
 	PG_TRY();
 
 		ret = textregexreplace_noopt(fcinfo);
-		if(VARSIZE(ret)==VARHDRSZ) {
+		if(!keep_empty && VARSIZE(ret)==VARHDRSZ) {
 			dbg("empty regex_replace() result. return input if final");
 			pfree(DatumGetPointer(ret));
 			if(final) {
@@ -145,6 +146,7 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 	text *t;
 	bool replaced;
 	bool matched;
+	bool keep_empty = false;
 
 	const char *rule_ptr, *rule_token_pos, *rule_end,
 			   *result_ptr, *result_token_pos, *result_end;
@@ -165,6 +167,9 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 		dbg("result is null. return input");
 		return get_in_copy(fcinfo);
 	}
+
+	if(PG_NARGS() > NOOPT_ARG_KEEP_EMPTY && !PG_ARGISNULL(NOOPT_ARG_KEEP_EMPTY))
+		keep_empty = PG_GETARG_BOOL(NOOPT_ARG_KEEP_EMPTY);
 
 	/*if(VARSIZE(PG_GETARG_DATUM(ARG_IN))==VARHDRSZ){
 		dbg("input is empty. return input");
@@ -212,13 +217,13 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 			if(n > 0) {
 				replace_arg(fcinfo, ARG_RESULT, result_chunk, result_ptr, result_end);
 			}
-			ret = apply_textregexreplace_noopt(fcinfo,&matched,true);
+			ret = apply_textregexreplace_noopt(fcinfo,&matched,true,keep_empty);
 			goto out;
 		}
 
 		replace_arg(fcinfo, ARG_RESULT, result_chunk, result_ptr, result_token_pos);
 
-		ret = apply_textregexreplace_noopt(fcinfo,&matched,false);
+		ret = apply_textregexreplace_noopt(fcinfo,&matched,false,keep_empty);
 		if(matched) {
 			goto out;
 		}
@@ -251,7 +256,7 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 			replace_arg(fcinfo, ARG_RESULT, result_chunk, result_ptr, result_end);
 		}
 	}
-	ret = apply_textregexreplace_noopt(fcinfo,&matched,true);
+	ret = apply_textregexreplace_noopt(fcinfo,&matched,true,keep_empty);
 
 out:
 	if(replaced) pfree(t);
@@ -270,6 +275,7 @@ Datum regexp_replace_rand(PG_FUNCTION_ARGS)
 	text *t;
 	ErrorData *e;
 	bool replaced;
+	bool keep_empty = false;
 
 	if(PG_ARGISNULL(ARG_IN)) {
 		dbg("input is null. return null");
@@ -301,6 +307,9 @@ Datum regexp_replace_rand(PG_FUNCTION_ARGS)
 		return get_in_copy(fcinfo);
 	}
 
+	if(PG_NARGS() > OPT_ARG_KEEP_EMPTY && !PG_ARGISNULL(OPT_ARG_KEEP_EMPTY))
+		keep_empty = PG_GETARG_BOOL(OPT_ARG_KEEP_EMPTY);
+
 	t = replace(PG_GETARG_TEXT_P(ARG_RESULT),&replaced);
 	if(!t) {
 		dbg("replace failed. return input");
@@ -316,7 +325,7 @@ Datum regexp_replace_rand(PG_FUNCTION_ARGS)
 	//call regexp_replace() catching exceptions
 	PG_TRY();
 		ret = textregexreplace(fcinfo);
-		if(VARSIZE(ret)==VARHDRSZ){
+		if(!keep_empty && VARSIZE(ret)==VARHDRSZ) {
 			dbg("empty regex_replace() result. return input");
 			pfree(DatumGetPointer(ret));
 			ret = get_in_copy(fcinfo);
