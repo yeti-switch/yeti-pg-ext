@@ -93,23 +93,29 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 		exit_err("unexpected response (response too small)");
 	}
 
-	l = msg[1];
-	if(l > (ret-PDU_HDR_SIZE)){
-		nn_freemsg(msg);
-		exit_err("unexpected response "
-			"(claimed response length %ld but have only %d bytes at the tail)",
-			l,ret-PDU_HDR_SIZE);
-	}
-
 	//check response code
 	response_code = msg[0];
+	l = msg[1];
 	dbg("got response code %d",response_code);
 	if(RESPONSE_CODE_SUCCESS!=response_code){
+		if(l > (ret-ERR_RESPONSE_HDR_SIZE)){
+			nn_freemsg(msg);
+			exit_err("unexpected response "
+				"(claimed response length %ld but have only %d bytes at the tail)",
+				l,ret-ERR_RESPONSE_HDR_SIZE);
+		}
 		if(l) {
 			exit_err("got %d <%.*s> from server",response_code,(int)l,msg+ERR_RESPONSE_HDR_SIZE);
 		} else {
 			exit_err("got %d from server",response_code);
 		}
+	}
+
+	if(l > (ret-PDU_HDR_SIZE)){
+		nn_freemsg(msg);
+		exit_err("unexpected response "
+			"(claimed response length %ld but have only %d bytes at the tail)",
+			l,ret-PDU_HDR_SIZE);
 	}
 
 	lrn_length = msg[2];
