@@ -105,8 +105,10 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 				l,ret-ERR_RESPONSE_HDR_SIZE);
 		}
 		if(l) {
+			nn_freemsg(msg);
 			exit_err("got %d <%.*s> from server",response_code,(int)l,msg+ERR_RESPONSE_HDR_SIZE);
 		} else {
+			nn_freemsg(msg);
 			exit_err("got %d from server",response_code);
 		}
 	}
@@ -225,8 +227,10 @@ Datum lnp_resolve(PG_FUNCTION_ARGS)
 	dbg("got response code %d",response_code);
 	if(RESPONSE_CODE_SUCCESS!=response_code){
 		if(l) {
+			nn_freemsg(msg);
 			exit_err("got %d <%.*s> from server",response_code,(int)l,msg+ERR_RESPONSE_HDR_SIZE);
 		} else {
+			nn_freemsg(msg);
 			exit_err("got %d from server",response_code);
 		}
 	}
