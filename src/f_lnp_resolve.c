@@ -12,7 +12,7 @@
 
 #define LOG_PREFIX "lnp_resolve: "
 
-#define nn_error(fmt, ...) exit_err(fmt": %s", ## __VA_ARGS__, nn_strerror(errno))
+#define nn_error(fmt, ...) exit_err(fmt, ## __VA_ARGS__)
 
 #define OLD_PDU_HDR_SIZE 2
 #define PDU_HDR_SIZE 3

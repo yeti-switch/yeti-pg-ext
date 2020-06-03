@@ -5,10 +5,11 @@
 
 #include <nanomsg/nn.h>
 #include <nanomsg/reqrep.h>
+#include <errno.h>
 
 #define LOG_PREFIX ""
 
-#define nn_error(fmt, ...) err(fmt": %s", ## __VA_ARGS__, nn_strerror(errno))
+#define nn_error(fmt, ...) err(fmt, ## __VA_ARGS__)
 
 void _PG_init(void){
 	//init shared variables

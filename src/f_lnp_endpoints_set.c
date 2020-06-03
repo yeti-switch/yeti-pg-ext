@@ -4,10 +4,11 @@
 
 #include <nanomsg/nn.h>
 #include <utils/array.h>
+#include <errno.h>
 
 #define LOG_PREFIX "lnp_endpoints_set: "
 
-#define nn_warn(fmt, ...) warn(fmt": %s", ## __VA_ARGS__, nn_strerror(errno))
+#define nn_warn(fmt, ...) warn(fmt, ## __VA_ARGS__)
 
 PG_FUNCTION_INFO_V1(lnp_endpoints_set);
 Datum lnp_endpoints_set(PG_FUNCTION_ARGS)
