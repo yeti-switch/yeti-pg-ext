@@ -22,17 +22,24 @@
 #define OPT_ARG_KEEP_EMPTY 4
 #define NOOPT_ARG_KEEP_EMPTY 3
 
-static inline const char *search_split_token(const char *s, size_t len)
+static inline const char *search_split_token(const char *s, const char *end)
 {
-	const char *p = memchr(s,REGEXP_SPLIT_TOKEN_1,len);
-	if(!p)
-		return NULL;
-	if(p+REGEXP_SPLIT_TOKEN_LEN > s+len) {
-		return NULL;
-	}
-	if(*(p+1)==REGEXP_SPLIT_TOKEN_2) {
-		return p;
-	}
+	const char *p = s;
+	//dbg("search_split_token(s:'%.*s', len:%d)",end-s, s, end-s);
+	do {
+		p = memchr(p,REGEXP_SPLIT_TOKEN_1,end-p);
+
+		if(!p)
+			return NULL;
+
+		if(p+REGEXP_SPLIT_TOKEN_LEN > end)
+			return NULL;
+
+		if(*(p+1)==REGEXP_SPLIT_TOKEN_2)
+			return p;
+
+		p+=2;
+	} while(p < end);
 	return NULL;
 }
 
@@ -209,10 +216,10 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 	ret = 0;
 
 	//iterate over rule/result chunks
-	while((rule_token_pos = search_split_token(rule_ptr, rule_end-rule_ptr))!=NULL) {
+	while((rule_token_pos = search_split_token(rule_ptr, rule_end))!=NULL) {
 		replace_arg(fcinfo, ARG_RULE, rule_chunk, rule_ptr, rule_token_pos);
 
-		result_token_pos = search_split_token(result_ptr, result_end-result_ptr);
+		result_token_pos = search_split_token(result_ptr, result_end);
 		if(!result_token_pos) {
 			if(n > 0) {
 				replace_arg(fcinfo, ARG_RESULT, result_chunk, result_ptr, result_end);
@@ -246,7 +253,7 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 	}
 
 	//process no tokens/tail cases
-	result_token_pos = search_split_token(result_ptr, result_end-result_ptr);
+	result_token_pos = search_split_token(result_ptr, result_end);
 	if(result_token_pos) {
 		replace_arg(fcinfo, ARG_RESULT, result_chunk, result_ptr, result_token_pos);
 	}
