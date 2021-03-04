@@ -17,6 +17,7 @@ else
 endif
 
 SHLIB_LINK = $(shell pkg-config $(NANOMSG) --libs-only-l)
+PG_CFLAGS = $(shell pkg-config --cflags $(NANOMSG))
 
 PG_CONFIG ?= pg_config
 PGXS = $(shell $(PG_CONFIG) --pgxs)
