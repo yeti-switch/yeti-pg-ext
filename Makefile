@@ -16,7 +16,7 @@ else
     NANOMSG = libnanomsg
 endif
 
-SHLIB_LINK = $(shell pkg-config $(NANOMSG) --libs-only-l)
+SHLIB_LINK = $(shell pkg-config $(NANOMSG) --libs)
 PG_CFLAGS = $(shell pkg-config --cflags $(NANOMSG))
 
 PG_CONFIG ?= pg_config
