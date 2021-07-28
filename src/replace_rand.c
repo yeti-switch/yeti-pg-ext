@@ -42,8 +42,8 @@ text *replace(text *in, bool *replaced){
 	char *ret_ptr;
 	const char	*p3, *p2,*p,*s,*s_end;
 
-	p = s = (char *)VARDATA(in);
-	s_len = VARSIZE(in) - VARHDRSZ;
+	p = s = (char *)VARDATA_ANY(in);
+	s_len = VARSIZE_ANY_EXHDR(in);
 	s_end = s+s_len;
 
 	//find all placeholders. store them to dynamic cache
@@ -166,6 +166,6 @@ Datum get_in_copy(PG_FUNCTION_ARGS){
 		return (Datum)0;
 	}
 	SET_VARSIZE(t, VARSIZE(in));
-	memcpy(VARDATA(t),VARDATA(in),VARSIZE(in)-VARHDRSZ);
+	memcpy(VARDATA(t),VARDATA_ANY(in),VARSIZE_ANY_EXHDR(in));
 	return PointerGetDatum(t);
 }

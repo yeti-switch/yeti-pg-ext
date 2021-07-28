@@ -114,7 +114,7 @@ static Datum apply_textregexreplace_noopt(PG_FUNCTION_ARGS, bool *matched, bool 
 	PG_TRY();
 
 		ret = textregexreplace_noopt(fcinfo);
-		if(!keep_empty && VARSIZE(ret)==VARHDRSZ) {
+		if(!keep_empty && VARSIZE_ANY_EXHDR(ret)==0) {
 			dbg("empty regex_replace() result. return input if final");
 			pfree(DatumGetPointer(ret));
 			if(final) {
@@ -183,7 +183,7 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 		return get_in_copy(fcinfo);
 	}*/
 
-	if(VARSIZE(PG_GETARG_DATUM(ARG_RULE))==VARHDRSZ){
+	if(VARSIZE_ANY_EXHDR(PG_GETARG_DATUM(ARG_RULE))==0){
 		dbg("rule is empty. return input");
 		return get_in_copy(fcinfo);
 	}
@@ -200,13 +200,13 @@ Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS)
 		PG_GETARG_DATUM(ARG_RESULT) = PointerGetDatum(t);
 	}
 
-	rule_ptr = (const char *)VARDATA(PG_GETARG_TEXT_P(ARG_RULE));
-	rule_end = rule_ptr + VARSIZE(PG_GETARG_TEXT_P(ARG_RULE)) - VARHDRSZ;
+	rule_ptr = (const char *)VARDATA_ANY(PG_GETARG_TEXT_P(ARG_RULE));
+	rule_end = rule_ptr + VARSIZE_ANY_EXHDR(PG_GETARG_TEXT_P(ARG_RULE));
 	rule_token_pos = NULL;
 	rule_chunk = 0;
 
-	result_ptr = (const char *)VARDATA(PG_GETARG_TEXT_P(ARG_RESULT));
-	result_end = result_ptr + VARSIZE(PG_GETARG_TEXT_P(ARG_RESULT)) - VARHDRSZ;
+	result_ptr = (const char *)VARDATA_ANY(PG_GETARG_TEXT_P(ARG_RESULT));
+	result_end = result_ptr + VARSIZE_ANY_EXHDR(PG_GETARG_TEXT_P(ARG_RESULT));
 	result_token_pos = NULL;
 	result_chunk = 0;
 
@@ -309,7 +309,7 @@ Datum regexp_replace_rand(PG_FUNCTION_ARGS)
 		return get_in_copy(fcinfo);
 	}*/
 
-	if(VARSIZE(PG_GETARG_DATUM(ARG_RULE))==VARHDRSZ){
+	if(VARSIZE_ANY_EXHDR(PG_GETARG_DATUM(ARG_RULE))==0){
 		dbg("rule is empty. return input");
 		return get_in_copy(fcinfo);
 	}
@@ -332,7 +332,7 @@ Datum regexp_replace_rand(PG_FUNCTION_ARGS)
 	//call regexp_replace() catching exceptions
 	PG_TRY();
 		ret = textregexreplace(fcinfo);
-		if(!keep_empty && VARSIZE(ret)==VARHDRSZ) {
+		if(!keep_empty && VARSIZE_ANY_EXHDR(ret)==0) {
 			dbg("empty regex_replace() result. return input");
 			pfree(DatumGetPointer(ret));
 			ret = get_in_copy(fcinfo);

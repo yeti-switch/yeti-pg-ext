@@ -43,12 +43,12 @@ Datum lnp_endpoints_set(PG_FUNCTION_ARGS)
 		}
 
 		e_uri = endpoints[endpoints_count].url;
-		memcpy(e_uri,VARDATA(uri),VARSIZE(uri)-VARHDRSZ);
+		memcpy(e_uri,VARDATA_ANY(uri),VARSIZE_ANY_EXHDR(uri));
 
 		id = nn_connect(nn_socket_fd, e_uri);
 		if(id < 0){
 			nn_warn("can't add endpoint '%s'",e_uri);
-			bzero(e_uri,VARSIZE(uri)-VARHDRSZ);
+			bzero(e_uri,VARSIZE_ANY_EXHDR(uri));
 			continue;
 		}
 

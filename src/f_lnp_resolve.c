@@ -46,7 +46,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 
 	//send request
 
-	l = VARSIZE(local_number)-VARHDRSZ;
+	l = VARSIZE_ANY_EXHDR(local_number);
 	size = l + PDU_HDR_SIZE;
 
 	msg = (char *)malloc(size);
@@ -64,7 +64,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	msg[0] = database_id;
 	msg[1] = REQ_VERSION;
 	msg[2] = l;
-	memcpy(msg+PDU_HDR_SIZE,VARDATA(local_number),l);
+	memcpy(msg+PDU_HDR_SIZE,VARDATA_ANY(local_number),l);
 
 	ret = nn_send(nn_socket_fd, msg, size, 0);
 	free(msg);
@@ -171,7 +171,7 @@ Datum lnp_resolve(PG_FUNCTION_ARGS)
 
 	//send request
 
-	l = VARSIZE(local_number)-VARHDRSZ;
+	l = VARSIZE_ANY_EXHDR(local_number);
 	size = l + OLD_PDU_HDR_SIZE;
 
 	msg = (char *)malloc(size);
@@ -187,7 +187,7 @@ Datum lnp_resolve(PG_FUNCTION_ARGS)
 	*/
 	msg[0] = database_id;
 	msg[1] = l;
-	memcpy(msg+OLD_PDU_HDR_SIZE,VARDATA(local_number),l);
+	memcpy(msg+OLD_PDU_HDR_SIZE,VARDATA_ANY(local_number),l);
 
 	ret = nn_send(nn_socket_fd, msg, size, 0);
 	free(msg);
@@ -239,7 +239,7 @@ Datum lnp_resolve(PG_FUNCTION_ARGS)
 	size = l + VARHDRSZ;
 	out = (text *)palloc(size);
 	SET_VARSIZE(out, size);
-	memcpy(VARDATA(out),msg+OLD_PDU_HDR_SIZE,l);
+	memcpy(VARDATA_ANY(out),msg+OLD_PDU_HDR_SIZE,l);
 
 	//cleanup
 	nn_freemsg(msg);
