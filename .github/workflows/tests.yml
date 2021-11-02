@@ -1,0 +1,16 @@
+name: Tests
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  rspec:
+    name: Rspec tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/yeti-switch/postgresql/build-image:bullseye
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        run: make
+
