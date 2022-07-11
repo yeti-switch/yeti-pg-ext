@@ -7,7 +7,7 @@ Datum replace_rand(PG_FUNCTION_ARGS);
 Datum regexp_replace_rand(PG_FUNCTION_ARGS);
 Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS);
 
-Datum lnp_resolve(PG_FUNCTION_ARGS);
+Datum lnp_resolve_cnam(PG_FUNCTION_ARGS);
 Datum lnp_resolve_tagged(PG_FUNCTION_ARGS);
 
 Datum lnp_endpoints_set(PG_FUNCTION_ARGS);
