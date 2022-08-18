@@ -1,6 +1,7 @@
 #include "replace_rand.h"
-
 #include "log.h"
+
+#include <utils/array.h>
 
 #include <stdlib.h>
 #include <sys/time.h>
@@ -168,4 +169,8 @@ Datum get_in_copy(PG_FUNCTION_ARGS){
 	SET_VARSIZE(t, VARSIZE(in));
 	memcpy(VARDATA(t),VARDATA_ANY(in),VARSIZE_ANY_EXHDR(in));
 	return PointerGetDatum(t);
+}
+
+Datum get_in_copy_array(PG_FUNCTION_ARGS){
+	PG_RETURN_ARRAYTYPE_P(DatumGetArrayTypePCopy(PG_GETARG_ARRAYTYPE_P(0)));
 }

@@ -6,6 +6,7 @@
 Datum replace_rand(PG_FUNCTION_ARGS);
 Datum regexp_replace_rand(PG_FUNCTION_ARGS);
 Datum regexp_replace_rand_noopt(PG_FUNCTION_ARGS);
+Datum regexp_replace_rand_array_noopt(PG_FUNCTION_ARGS);
 
 Datum lnp_resolve_cnam(PG_FUNCTION_ARGS);
 Datum lnp_resolve_tagged(PG_FUNCTION_ARGS);

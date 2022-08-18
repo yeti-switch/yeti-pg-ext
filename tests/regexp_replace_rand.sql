@@ -38,7 +38,24 @@ declare
         ['empty result',E'regexp_replace_rand(\'a\',\'q\',\'\',\'g\')','a'],
         ['empty regexp_replace result',E'regexp_replace_rand(\'a\',\'a\',\'\',\'g\')','a'],
         ['NULL opt',E'regexp_replace_rand(\'a\',\'a\',\'b\',null)',null],
-        ['empty opt',E'regexp_replace_rand(\'a\',\'a\',\'b\',\'\')','b']
+        ['empty opt',E'regexp_replace_rand(\'a\',\'a\',\'b\',\'\')','b'],
+/**************************************************
+ * regexp_replace_rand(text_in TEXT[], regexp_rule TEXT, regexp_result TEXT, keep_empty BOOL = FALSE) *
+ **************************************************
+ */
+        ['valid replace, with replace_rand',E'regexp_replace_rand(array[\'a\',\'a\'],\'a\',\'br(4)\')','-'],
+        ['valid rreplace, no replace_rand',E'regexp_replace_rand(array[\'a\',\'a\'],\'a\',\'b\')','{b,b}'],
+        ['exception. no replace_rand',E'regexp_replace_rand(array[\'a\'],\'a[\',\'b\')', '{a}'],
+        ['exception. with replace_rand',E'regexp_replace_rand(array[\'a\'],\'a[\',\'br(4)\')','{a}'],
+        ['NULL in',E'regexp_replace_rand(array[null],\'a\',\'b\')','{NULL}'],
+        ['empty in',E'regexp_replace_rand(array[\'\'],\'a\',\'b\')','{""}'],
+        ['NULL rule',E'regexp_replace_rand(array[\'a\'],null,\'b\')','{a}'],
+        ['empty rule',E'regexp_replace_rand(array[\'a\'],\'\',\'b\')','{a}'],
+        ['NULL result',E'regexp_replace_rand(array[\'a\'],\'a\',null)','{a}'],
+        ['empty result',E'regexp_replace_rand(array[\'a\'],\'q\',\'\')','{a}'],
+        ['empty regexp_replace result',E'regexp_replace_rand(array[\'a\'],\'a\',\'\')','{a}'],
+        ['multi-in, single-token',E'regexp_replace_rand(array[\'abba\',\'yabba\'],\'b+\',\'*\')','{a*a,ya*a}'],
+        ['multi-in, multi-token',E'regexp_replace_rand(array[\'qwe\',\'rty\',\'asd\'],\'(q)||(r)\',\'\\1*||\\1^\')','{q*we,r^ty,asd}']
     ];
     v text[];
     ret text;
