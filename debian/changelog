@@ -1,3 +1,7 @@
+yeti-pg-ext (1.3.5) stable; urgency=medium
+  * add function regexp_replace_rand(text_in TEXT[], regexp_rule TEXT, regexp_result TEXT, keep_empty BOOL = FALSE)
+ -- Michael Furmur <furmur@pm.me>  Thu, 18 Aug 2022 14:28:25 +0300
+
 yeti-pg-ext (1.3.4) stable; urgency=medium
   * drop function lnp_resolve(INTEGER, TEXT)
   * add function lnp_resolve_cnam(database_id INTEGER, data JSON)
