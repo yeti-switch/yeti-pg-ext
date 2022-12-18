@@ -1,3 +1,8 @@
+[![Build Status](https://github.com/yeti-switch/yeti-pg-ext/actions/workflows/tests.yml/badge.svg)](https://github.com/yeti-switch/yeti-pg-ext/actions/workflows/tests.yml)
+[![Made in Ukraine](https://img.shields.io/badge/made_in-ukraine-ffd700.svg?labelColor=0057b7)](https://stand-with-ukraine.pp.ua)
+
+[![Stand With Ukraine](https://raw.githubusercontent.com/vshymanskyy/StandWithUkraine/main/banner-direct-team.svg)](https://stand-with-ukraine.pp.ua)
+
 # yeti-pg-ext
 
 yeti-pg-ext is a part of project [Yeti]
