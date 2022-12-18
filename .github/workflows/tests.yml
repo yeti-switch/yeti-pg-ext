@@ -5,8 +5,8 @@ on:
     branches: [ master ]
 
 jobs:
-  rspec:
-    name: Rspec tests
+  build:
+    name: Build
     runs-on: ubuntu-latest
     container: ghcr.io/yeti-switch/postgresql/build-image:bullseye
     steps:
