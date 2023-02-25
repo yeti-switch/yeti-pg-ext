@@ -14,7 +14,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS);
 Datum lnp_endpoints_set(PG_FUNCTION_ARGS);
 Datum lnp_endpoints_show(PG_FUNCTION_ARGS);
 
-Datum lnp_timeout_set(PG_FUNCTION_ARGS);
+Datum lnp_set_timeout(PG_FUNCTION_ARGS);
 
 Datum rank_dns_srv(PG_FUNCTION_ARGS);
 

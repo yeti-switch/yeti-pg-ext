@@ -1,3 +1,5 @@
+#include "postgres.h"
+
 #define _log(level,fmt, ...) elog(level,LOG_PREFIX fmt, ## __VA_ARGS__)
 
 #define info(fmt, ...) _log(INFO, fmt, ## __VA_ARGS__)

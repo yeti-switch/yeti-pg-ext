@@ -1,18 +1,12 @@
 #include "exported_functions.h"
 #include "log.h"
-#include "shared_vars.h"
+#include "transport.h"
 
 #include "funcapi.h"
 
 #include <stdlib.h>
 
-#include "sys/errno.h"
-#include <nanomsg/nn.h>
-#include <nanomsg/reqrep.h>
-
 #define LOG_PREFIX "lnp_resolve: "
-
-#define nn_error(fmt, ...) exit_err(fmt, ## __VA_ARGS__)
 
 #define TAGGED_REQ_VERSION 0
 #define TAGGED_HDR_SIZE 3
@@ -23,18 +17,20 @@
 #define CNAM_HDR_SIZE 6
 #define CNAM_RESPONSE_HDR_SIZE 4
 
+#define MSG_SZ 1024 * 2
+
 PG_FUNCTION_INFO_V1(lnp_resolve_cnam);
 Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 {
 	size_t size, json_data_size;
 	int n;
-	char *msg;
+	char msg[MSG_SZ];
 	text *ret;
 
 	int32 database_id = PG_GETARG_INT32(0);
 	text *json_data = PG_GETARG_TEXT_P(1);
 
-	if(!endpoints_count) {
+	if(!Transport.get_endpoints_count()) {
 		exit_err("no configured endpoints. use lnp_endpoints_set to add endpoint");
 	}
 
@@ -42,9 +38,8 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 	json_data_size = VARSIZE_ANY_EXHDR(json_data);
 	size = json_data_size + CNAM_HDR_SIZE;
 
-	msg = (char *)palloc(size);
-	if(NULL==msg) {
-		exit_err("can't allocate memory for request buffer");
+	if(size > MSG_SZ) {
+		exit_err("message is to long");
 	}
 
 	/* layout:
@@ -53,24 +48,26 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 	*    4 byte - json_data length
 	*    n bytes - json_data
 	*/
+	memset(&msg, '\0', MSG_SZ);
 	msg[0] = database_id;
 	msg[1] = CNAM_REQ_VERSION;
 	*(int *)(msg+2) = json_data_size;
 
 	memcpy(msg+CNAM_HDR_SIZE,VARDATA_ANY(json_data),json_data_size);
-
-	n = nn_send(nn_socket_fd, msg, size, 0);
-	pfree(msg);
+	n = Transport.send_msg(msg, size);
 
 	if(n != (int)size) {
-		nn_error("can't send request");
+		exit_err("can't send request");
 	}
 
 	//receive response
-	msg = NULL;
-	n = nn_recv(nn_socket_fd,&msg,NN_MSG,0);
-	if(n < 0) {
-		nn_error("can't get reply");
+	memset(&msg, '\0', MSG_SZ);
+	n = Transport.recv_msg(&msg, MSG_SZ);
+
+	if(n >= 0) {
+		msg[n] = '\0';
+	} else {
+		exit_err("can't get reply");
 	}
 
 	/* layout:
@@ -80,22 +77,18 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 
 	//check response layout
 	if(n < CNAM_RESPONSE_HDR_SIZE) { //response must have at least 4 bytes
-		nn_freemsg(msg);
 		exit_err("unexpected response (response too small)");
 	}
 
 	//check response code
 	json_data_size = *(int *)msg;
 
-
 	//dbg("got cnam response size %ld",json_data_size);
 	if(!json_data_size) {
-		nn_freemsg(msg);
 		exit_err("empty reply");
 	}
 
 	if(json_data_size > (n - CNAM_RESPONSE_HDR_SIZE)) {
-		nn_freemsg(msg);
 		exit_err("unexpected response "
 			"(claimed response length %ld but have only %d bytes at the tail)",
 			json_data_size,n-CNAM_RESPONSE_HDR_SIZE);
@@ -104,12 +97,11 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 	size = json_data_size + VARHDRSZ;
 	ret = palloc(size);
 	if(!ret) {
-		nn_freemsg(msg);
 		exit_err("failed to allocate buffer for json data (size: %ld)", size);
 	}
 
 	SET_VARSIZE(ret, size);
-	memcpy(VARDATA(ret),msg + CNAM_RESPONSE_HDR_SIZE,json_data_size);
+	memcpy(VARDATA(ret), msg + CNAM_RESPONSE_HDR_SIZE, json_data_size);
 	PG_RETURN_TEXT_P(ret);
 }
 
@@ -119,7 +111,8 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	size_t l, size, lrn_length, tag_length = 0;
 	int ret, response_code;
 	HeapTuple t;
-	char *v[2], *msg;
+	char *v[2];
+	char msg[MSG_SZ];
 	AttInMetadata *attinmeta;
 	TupleDesc tdesc;
 
@@ -132,7 +125,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 				errmsg("function returning record called in context "
 					   "that cannot accept type record")));
 
-	if(!endpoints_count){
+	if(!Transport.get_endpoints_count()){
 		exit_err("no configured endpoints. use lnp_endpoints_set to add endpoint");
 	}
 
@@ -141,10 +134,8 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	l = VARSIZE_ANY_EXHDR(local_number);
 	size = l + TAGGED_HDR_SIZE;
 
-	msg = (char *)malloc(size);
-	if(NULL==msg){
-		//nn_close(s);
-		exit_err("can't allocate memory for request buffer");
+	if(size > MSG_SZ) {
+		exit_err("message is to long");
 	}
 
 	/* layout:
@@ -153,22 +144,26 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	*    1 byte - number length
 	*    n bytes - number data
 	*/
+	memset(&msg, '\0', MSG_SZ);
 	msg[0] = database_id;
 	msg[1] = TAGGED_REQ_VERSION;
 	msg[2] = l;
 	memcpy(msg+TAGGED_HDR_SIZE,VARDATA_ANY(local_number),l);
 
-	ret = nn_send(nn_socket_fd, msg, size, 0);
-	free(msg);
-	if(ret!=size){
-		nn_error("can't send request");
+	ret = Transport.send_msg(msg, size);
+
+	if(ret!= (int)size) {
+		exit_err("can't send request");
 	}
 
 	//receive response
-	msg = NULL;
-	ret = nn_recv(nn_socket_fd,&msg,NN_MSG,0);
-	if(ret < 0){
-		nn_error("can't get reply");
+	memset(&msg, '\0', MSG_SZ);
+	ret = Transport.recv_msg(&msg, MSG_SZ);
+
+	if(ret >= 0) {
+		msg[ret] = '\0';
+	} else {
+		exit_err("can't get reply");
 	}
 
 	/* layout:
@@ -181,7 +176,6 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 
 	//check response layout
 	if(ret < TAGGED_HDR_SIZE) { //response must have at least 3 bytes
-		nn_freemsg(msg);
 		exit_err("unexpected response (response too small)");
 	}
 
@@ -191,23 +185,19 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	dbg("got response code %d",response_code);
 	if(TAGGED_RESPONSE_CODE_SUCCESS!=response_code){
 		if(l > (ret-TAGGED_ERR_RESPONSE_HDR_SIZE)){
-			nn_freemsg(msg);
 			exit_err("unexpected response "
 				"(claimed response length %ld but have only %d bytes at the tail)",
 				l,ret-TAGGED_ERR_RESPONSE_HDR_SIZE);
 		}
 		if(l) {
-			nn_freemsg(msg);
 			exit_err("got %d <%.*s> from server",
 					 response_code,(int)l,msg+TAGGED_ERR_RESPONSE_HDR_SIZE);
 		} else {
-			nn_freemsg(msg);
 			exit_err("got %d from server",response_code);
 		}
 	}
 
 	if(l > (ret-TAGGED_HDR_SIZE)){
-		nn_freemsg(msg);
 		exit_err("unexpected response "
 			"(claimed response length %ld but have only %d bytes at the tail)",
 			l,ret-TAGGED_HDR_SIZE);
@@ -215,7 +205,6 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 
 	lrn_length = msg[2];
 	if(lrn_length > l) {
-		nn_freemsg(msg);
 		exit_err("malformed response "
 			"(claimed lrn_length %ld but total_length is %ld bytes only)",
 			lrn_length,l)
@@ -235,8 +224,6 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	} else {
 		v[1] = NULL;
 	}
-
-	nn_freemsg(msg);
 
 	attinmeta = TupleDescGetAttInMetadata(tdesc);
 	t = BuildTupleFromCStrings(attinmeta, v);

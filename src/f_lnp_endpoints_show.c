@@ -1,10 +1,7 @@
 #include "exported_functions.h"
 #include "log.h"
-#include "shared_vars.h"
-
+#include "transport.h"
 #include "funcapi.h"
-
-#include <nanomsg/nn.h>
 #include <string.h>
 
 #define LOG_PREFIX "lnp_endpoints_show: "
@@ -23,7 +20,7 @@ Datum lnp_endpoints_show(PG_FUNCTION_ARGS)
 		ctx = SRF_FIRSTCALL_INIT();
 
 		mctx = MemoryContextSwitchTo(ctx->multi_call_memory_ctx);
-		ctx->max_calls = endpoints_count;
+		ctx->max_calls = Transport.get_endpoints_count();
 
 		if (get_call_result_type(fcinfo, NULL, &tdesc) != TYPEFUNC_COMPOSITE)
 			ereport(ERROR,
@@ -51,8 +48,14 @@ Datum lnp_endpoints_show(PG_FUNCTION_ARGS)
 		v[0] = (char *) palloc(16*sizeof(char));
 		v[1] = (char *) palloc(MAX_ENDPOINT_LEN*sizeof(char));
 
-		snprintf(v[0], 16, "%d", endpoints[i].id);
-		strncpy(v[1],endpoints[i].url,MAX_ENDPOINT_LEN);
+		const endpoint *ep = Transport.get_endpoint_at_index(i);
+
+		if (ep == NULL) {
+			PG_RETURN_NULL();
+		}
+
+		snprintf(v[0], 16, "%d", ep->id);
+		strncpy(v[1], ep->url, MAX_ENDPOINT_LEN);
 
 		t = BuildTupleFromCStrings(attinmeta, v);
 		r = HeapTupleGetDatum(t);

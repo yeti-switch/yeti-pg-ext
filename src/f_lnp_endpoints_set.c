@@ -1,30 +1,22 @@
 #include "exported_functions.h"
 #include "log.h"
-#include "shared_vars.h"
+#include "transport.h"
 
-#include <nanomsg/nn.h>
 #include <utils/array.h>
-#include <errno.h>
 
 #define LOG_PREFIX "lnp_endpoints_set: "
-
-#define nn_warn(fmt, ...) warn(fmt, ## __VA_ARGS__)
 
 PG_FUNCTION_INFO_V1(lnp_endpoints_set);
 Datum lnp_endpoints_set(PG_FUNCTION_ARGS)
 {
-	int id,i;
 	Datum uri;
-	char *e_uri;
+	char c_uri[MAX_ENDPOINT_LEN];
 	bool is_null;
 	ArrayIterator it;
 	ArrayType *input= PG_GETARG_ARRAYTYPE_P(0);
 
-	//shutdown old endpoints
-	for(i=0;i<endpoints_count;i++)
-		nn_shutdown(nn_socket_fd,endpoints[i].id);
-	bzero(endpoints,sizeof(endpoint)*endpoints_count);
-	endpoints_count = 0;
+	Transport.shut_down_all_connections();
+	Transport.remove_all_endpoints();
 
 	//apply new ones
 
@@ -36,24 +28,10 @@ Datum lnp_endpoints_set(PG_FUNCTION_ARGS)
 
 	while(array_iterate(it,&uri,&is_null)){
 		if(is_null) continue;
-
-		if(endpoints_count==MAX_ENDPOINTS){
-			warn("endpoints count limit (%d) reached",MAX_ENDPOINTS);
-			continue;
-		}
-
-		e_uri = endpoints[endpoints_count].url;
-		memcpy(e_uri,VARDATA_ANY(uri),VARSIZE_ANY_EXHDR(uri));
-
-		id = nn_connect(nn_socket_fd, e_uri);
-		if(id < 0){
-			nn_warn("can't add endpoint '%s'",e_uri);
-			bzero(e_uri,VARSIZE_ANY_EXHDR(uri));
-			continue;
-		}
-
-		endpoints[endpoints_count].id = id;
-		endpoints_count++;
+		memset(&c_uri, 0, MAX_ENDPOINT_LEN);
+		memcpy(&c_uri, VARDATA_ANY(uri), VARSIZE_ANY_EXHDR(uri));
+		Transport.add_endpoint(c_uri);
 	}
+
 	PG_RETURN_NULL();
 }
