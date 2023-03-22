@@ -1,3 +1,7 @@
+yeti-pg-ext (1.3.7) stable; urgency=medium
+  * add function lnp_resolve_tagged_with_error(database_id INTEGER, local_number TEXT) RETURNS lnp_result_with_error
+ -- Michael Furmur <furmur@pm.me>  Thu, 23 Mar 2023 15:00:00 +0200
+
 yeti-pg-ext (1.3.6) stable; urgency=medium
   * add function tbf_rate_check(namespace_id INTEGER, bucket_id BIGINT, rate REAL) RETURNS BOOLEAN
  -- Michael Furmur <furmur@pm.me>  Sun, 18 Dec 2022 18:52:06 +0200
