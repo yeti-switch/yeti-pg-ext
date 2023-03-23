@@ -1,6 +1,8 @@
 ﻿#include "exported_functions.h"
 #include "log.h"
 #include "transport.h"
+#include "endpoints_cache.h"
+#include "utils.h"
 
 #include "funcapi.h"
 
@@ -117,13 +119,12 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	size_t l, size, lrn_length, tag_length = 0;
 	int ret, response_code;
 	HeapTuple t;
-	char *v[2];
+	char *v[2], *local_number, *response_moc;
+	bool error_moc;
+	int32 database_id;
 	char msg[MSG_SZ];
 	AttInMetadata *attinmeta;
 	TupleDesc tdesc;
-
-	int32 database_id = PG_GETARG_INT32(0);
-	text *local_number = PG_GETARG_TEXT_P(1);
 
 	if (get_call_result_type(fcinfo, NULL, &tdesc) != TYPEFUNC_COMPOSITE)
 		ereport(ERROR,
@@ -131,13 +132,31 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 				errmsg("function returning record called in context "
 					   "that cannot accept type record")));
 
-	if(!Transport.get_endpoints_count()){
+	database_id = PG_GETARG_INT32(0);
+	local_number = STR_FROM_TEXTARG(1);
+
+	// make mocking response if needed
+	if (EndpointsCache.find(local_number, &response_moc, &error_moc) == 0) {
+		pfree(local_number); local_number = NULL;
+
+		if (error_moc) {
+			warn("%s", response_moc);
+			PG_RETURN_NULL();
+		}
+
+		v[0] = response_moc; //lrn
+		v[1] = NULL; // tag
+		attinmeta = TupleDescGetAttInMetadata(tdesc);
+		t = BuildTupleFromCStrings(attinmeta, v);
+		return HeapTupleGetDatum(t);
+	}
+
+	if (!Transport.get_endpoints_count()) {
 		exit_err("no configured endpoints. use lnp_endpoints_set to add endpoint");
 	}
 
 	//send request
-
-	l = VARSIZE_ANY_EXHDR(local_number);
+	l = strlen(local_number);
 	size = l + TAGGED_HDR_SIZE;
 
 	if(size > MSG_SZ) {
@@ -154,7 +173,8 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	msg[0] = database_id;
 	msg[1] = TAGGED_REQ_VERSION;
 	msg[2] = l;
-	memcpy(msg+TAGGED_HDR_SIZE,VARDATA_ANY(local_number),l);
+	memcpy(msg+TAGGED_HDR_SIZE,local_number,l);
+	pfree(local_number); local_number = NULL;
 
 	ret = Transport.send_msg(msg, size);
 
@@ -246,14 +266,13 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	size_t l, size, lrn_length, tag_length;
 	int ret, response_code;
 	HeapTuple t;
-	char *v[3];
+	char *v[3], *local_number, *response_moc;
 	char *err_text = NULL;
+	bool error_moc;
+	int32 database_id;
 	char msg[MSG_SZ];
 	AttInMetadata *attinmeta;
 	TupleDesc tdesc;
-
-	int32 database_id = PG_GETARG_INT32(0);
-	text *local_number = PG_GETARG_TEXT_P(1);
 
 	if (get_call_result_type(fcinfo, NULL, &tdesc) != TYPEFUNC_COMPOSITE)
 		ereport(ERROR,
@@ -261,16 +280,39 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 				errmsg("function returning record called in context "
 					   "that cannot accept type record")));
 
-	if(!Transport.get_endpoints_count()){
+	database_id = PG_GETARG_INT32(0);
+	local_number = STR_FROM_TEXTARG(1);
+
+	// make mocking response if needed
+	if (EndpointsCache.find(local_number, &response_moc, &error_moc) == 0) {
+		pfree(local_number); local_number = NULL;
+
+		if (error_moc) {
+			v[0] = NULL; //lrn
+			v[1] = NULL; // tag
+			v[2] = response_moc; // error
+		} else {
+			v[0] = response_moc; //lrn
+			v[1] = NULL; // tag
+			v[2] = NULL; // error
+		}
+
+		attinmeta = TupleDescGetAttInMetadata(tdesc);
+		t = BuildTupleFromCStrings(attinmeta, v);
+		return HeapTupleGetDatum(t);
+	}
+
+	if (!Transport.get_endpoints_count()) {
 		goto_exit_with_error("local: no configured endpoints");
 	}
 
 	//send request
 
-	l = VARSIZE_ANY_EXHDR(local_number);
+	l = strlen(local_number);
 	size = l + TAGGED_HDR_SIZE;
 
 	if(size > MSG_SZ) {
+		pfree(local_number); local_number = NULL;
 		goto_exit_with_error("local: local_number is to long");
 	}
 
@@ -284,7 +326,8 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	msg[0] = database_id;
 	msg[1] = TAGGED_REQ_VERSION;
 	msg[2] = l;
-	memcpy(msg+TAGGED_HDR_SIZE,VARDATA_ANY(local_number),l);
+	memcpy(msg+TAGGED_HDR_SIZE,local_number,l);
+	pfree(local_number); local_number = NULL;
 
 	ret = Transport.send_msg(msg, size);
 

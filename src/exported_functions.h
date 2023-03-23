@@ -10,6 +10,9 @@ Datum regexp_replace_rand_array_noopt(PG_FUNCTION_ARGS);
 
 Datum lnp_resolve_cnam(PG_FUNCTION_ARGS);
 Datum lnp_resolve_tagged(PG_FUNCTION_ARGS);
+Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS);
+
+Datum lnp_endpoints_cache_set(PG_FUNCTION_ARGS);
 
 Datum lnp_endpoints_set(PG_FUNCTION_ARGS);
 Datum lnp_endpoints_show(PG_FUNCTION_ARGS);
