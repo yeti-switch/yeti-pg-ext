@@ -177,18 +177,18 @@ int __tr_send_msg(const void *buf, size_t len) {
 			n = sendto(udp_socket_fd, buf, len, 0, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
 
 			if (n < 0 || n != (int)len) {
-				info("can't send request");
+				dbg("can't send request");
 
 				// is next enpoint available
 				if (i + 1 < endpoints_count)
 				{
-					info("try next endpoint");
+					dbg("try next endpoint");
 				}
 				else if (curr_endpoint_index > 0)
 				{
 					curr_endpoint_index = 0;
 					i = 0;
-					info("try first endpoint");
+					dbg("try first endpoint");
 				}
 
 				continue;
