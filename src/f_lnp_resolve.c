@@ -262,7 +262,7 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 					   "that cannot accept type record")));
 
 	if(!Transport.get_endpoints_count()){
-		goto_exit_with_error("no configured endpoints. use lnp_endpoints_set to add endpoint");
+		goto_exit_with_error("local: no configured endpoints");
 	}
 
 	//send request
@@ -271,7 +271,7 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	size = l + TAGGED_HDR_SIZE;
 
 	if(size > MSG_SZ) {
-		goto_exit_with_error("message is to long");
+		goto_exit_with_error("local: local_number is to long");
 	}
 
 	/* layout:
@@ -288,8 +288,8 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 
 	ret = Transport.send_msg(msg, size);
 
-	if(ret!= (int)size) {
-		goto_exit_with_error("can't send request");
+	if(ret != (int)size) {
+		goto_exit_with_error("local: failed to send request");
 	}
 
 	//receive response
@@ -299,7 +299,7 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	if(ret >= 0) {
 		msg[ret] = '\0';
 	} else {
-		goto_exit_with_error("can't get reply");
+		goto_exit_with_error("local: reply timeout");
 	}
 
 	/* layout:
@@ -312,7 +312,7 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 
 	//check response layout
 	if(ret < TAGGED_HDR_SIZE) { //response must have at least 3 bytes
-		goto_exit_with_error("unexpected response (response too small)");
+		goto_exit_with_error("local: unexpected response (response is too small)");
 	}
 
 	//check response code
@@ -321,28 +321,28 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	dbg("got response code %d",response_code);
 	if(TAGGED_RESPONSE_CODE_SUCCESS!=response_code){
 		if(l > (ret-TAGGED_ERR_RESPONSE_HDR_SIZE)){
-			goto_exit_with_error("unexpected response "
+			goto_exit_with_error("local: unexpected response "
 				"(claimed response length %ld but have only %d bytes at the tail",
 				l, ret-TAGGED_ERR_RESPONSE_HDR_SIZE);
 		}
 		if(l) {
-			goto_exit_with_error("got %d <%.*s> from server",
+			goto_exit_with_error("remote: %d <%.*s>",
 				response_code, (int)l, msg+TAGGED_ERR_RESPONSE_HDR_SIZE);
 
 		} else {
-			goto_exit_with_error("got %d from server", response_code);
+			goto_exit_with_error("remote: %d", response_code);
 		}
 	}
 
 	if(l > (ret-TAGGED_HDR_SIZE)){
-		goto_exit_with_error("unexpected response "
+		goto_exit_with_error("local: unexpected response "
 			"(claimed response length %ld but have only %d bytes at the tail)",
 			l, ret-TAGGED_HDR_SIZE);
 	}
 
 	lrn_length = msg[2];
 	if(lrn_length > l) {
-		goto_exit_with_error("malformed response "
+		goto_exit_with_error("local: malformed response "
 			"(claimed lrn_length %ld but total_length is %ld bytes only)",
 			lrn_length, l);
 	}
