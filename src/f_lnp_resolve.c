@@ -20,16 +20,10 @@
 #define MSG_SZ 1024 * 2
 #define ERROR_TEXT_SZ MSG_SZ
 
-#define goto_exit_with_error(fmt, ...)\
-	err_text = (char *)malloc(ERROR_TEXT_SZ);\
-	sprintf(err_text, fmt, ## __VA_ARGS__);\
+#define goto_exit_with_error(fmt, ...) \
+	err_text = (char *)malloc(ERROR_TEXT_SZ); \
+	snprintf(err_text, ERROR_TEXT_SZ, fmt, ## __VA_ARGS__); \
 	goto exit;
-
-#define free_error\
-	if (err_text != NULL) {\
-		free(err_text); err_text = NULL;\
-	}
-
 
 PG_FUNCTION_INFO_V1(lnp_resolve_cnam);
 Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
@@ -249,7 +243,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 PG_FUNCTION_INFO_V1(lnp_resolve_tagged_with_error);
 Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 {
-	size_t l, size, lrn_length, tag_length, err_length = 0;
+	size_t l, size, lrn_length, tag_length;
 	int ret, response_code;
 	HeapTuple t;
 	char *v[3];
@@ -380,18 +374,13 @@ exit:
 		v[1] = NULL;
 
 		//error
-		err_length = strlen(err_text);
-		v[2] = palloc((err_length+1)*sizeof(char *));
-		memcpy(v[2],err_text,err_length);
-		v[2][err_length] = 0;
-
-		free_error;
+		v[2] = err_text;
 	}
 
 	attinmeta = TupleDescGetAttInMetadata(tdesc);
 	t = BuildTupleFromCStrings(attinmeta, v);
 
-	if(v[2]) pfree(v[2]);
+	if(err_text) free(err_text);
 	if(v[1]) pfree(v[1]);
 	if(v[0]) pfree(v[0]);
 
