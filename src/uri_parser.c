@@ -4,6 +4,10 @@
 #include <stdlib.h>
 
 int parseAddr(const char *addr, UriComponents *out) {
+	const char *delim;
+	size_t delim_sz;
+	size_t comp_sz;
+
 	// check whether address is valid
 	if (addr == NULL || strlen(addr) == 0 || strlen(addr) >= SOCKADDR_SIZE)
 		return -1;
@@ -14,10 +18,6 @@ int parseAddr(const char *addr, UriComponents *out) {
 
 	// fill uri components
 	memset(out, 0, sizeof(UriComponents));
-
-	const char *delim;
-	size_t delim_sz;
-	size_t comp_sz;
 
 	// parse protocol
 	delim = strstr(addr, "://");
