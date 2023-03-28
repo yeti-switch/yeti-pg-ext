@@ -234,14 +234,14 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	}
 
 	//lrn
-	v[0] = palloc((lrn_length+1)*sizeof(char *));
+	v[0] = palloc((lrn_length+1)*sizeof(char));
 	memcpy(v[0],msg+TAGGED_HDR_SIZE,lrn_length);
 	v[0][lrn_length] = 0;
 
 	//tag
 	tag_length = l-lrn_length;
 	if(l > lrn_length){ //check for the tag prescence in response
-		v[1] = palloc((tag_length+1)*sizeof(char *));
+		v[1] = palloc((tag_length+1)*sizeof(char));
 		memcpy(v[1],msg+TAGGED_HDR_SIZE+lrn_length,tag_length);
 		v[1][tag_length] = 0;
 	} else {
@@ -387,14 +387,14 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 exit:
 	if (err_text == NULL) {
 		//lrn
-		v[0] = palloc((lrn_length+1)*sizeof(char *));
+		v[0] = palloc((lrn_length+1)*sizeof(char));
 		memcpy(v[0],msg+TAGGED_HDR_SIZE,lrn_length);
 		v[0][lrn_length] = 0;
 
 		//tag
 		tag_length = l-lrn_length;
 		if(l > lrn_length){ //check for the tag prescence in response
-			v[1] = palloc((tag_length+1)*sizeof(char *));
+			v[1] = palloc((tag_length+1)*sizeof(char));
 			memcpy(v[1],msg+TAGGED_HDR_SIZE+lrn_length,tag_length);
 			v[1][tag_length] = 0;
 		} else {

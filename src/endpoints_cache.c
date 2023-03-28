@@ -2,6 +2,7 @@
 #include "log.h"
 
 #include "utils/hsearch.h"
+#include <math.h>
 
 #define LOG_PREFIX "endpoints_cache: "
 
@@ -70,10 +71,7 @@ const struct endpoints_cache EndpointsCache = {
 
 void set_key_buf(const text *key)
 {
-	int size = VARSIZE_ANY_EXHDR(key);
-	if(size > EC_KEY_MAX_LENGTH)
-		size = EC_KEY_MAX_LENGTH;
-
+	const int size = Min(VARSIZE_ANY_EXHDR(key), EC_KEY_MAX_LENGTH);
 	bzero(key_buf, EC_KEY_MAX_LENGTH);
 	strncpy(key_buf, VARDATA_ANY(key), size);
 }
@@ -107,8 +105,7 @@ int __ec_store(const text *key, const text *response, bool error) {
 	// store data
 	strncpy(entry->response,
 		VARDATA_ANY(response),
-		VARSIZE_ANY_EXHDR(response) > EC_RESPONSE_MAX_LENGTH ?
-			EC_RESPONSE_MAX_LENGTH : VARSIZE_ANY_EXHDR(response));
+		Min(VARSIZE_ANY_EXHDR(response), EC_RESPONSE_MAX_LENGTH));
 	entry->error = error;
 
 	__ec_print_elements();
