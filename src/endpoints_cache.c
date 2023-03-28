@@ -9,6 +9,9 @@
 #define EC_KEY_MAX_LENGTH 256
 #define EC_RESPONSE_MAX_LENGTH 2 * 1024
 
+
+static char key_buf[EC_KEY_MAX_LENGTH];
+
 /*
  * hash table key
  */
@@ -37,11 +40,13 @@ HTAB *hash_tab;
  * func prototypes
  */
 
+void set_key_buf(const text *key);
+
 int __ec_init(void);
-int __ec_store(const char *key, const char *response, bool error);
-int __ec_find(const char *key, char **response_out, bool *error_out);
+int __ec_store(const text *key,const text *response, bool error);
+int __ec_find(const text *, char **response_out, bool *error_out);
 int __ec_items_count(void);
-int __ec_remove(const char *key);
+int __ec_remove(const text *);
 int __ec_remove_all(void);
 int __ec_print_elements(void);
 int __ec_destroy(void);
@@ -63,6 +68,16 @@ const struct endpoints_cache EndpointsCache = {
  * func implementations
  */
 
+void set_key_buf(const text *key)
+{
+	int size = VARSIZE_ANY_EXHDR(key);
+	if(size > EC_KEY_MAX_LENGTH)
+		size = EC_KEY_MAX_LENGTH;
+
+	bzero(key_buf, EC_KEY_MAX_LENGTH);
+	strncpy(key_buf, VARDATA_ANY(key), size);
+}
+
 int __ec_init(void) {
 	HASHCTL info;
 
@@ -77,8 +92,7 @@ int __ec_init(void) {
 	return 0;
 }
 
-int __ec_store(const char *key, const char *response, bool error) {
-	EndpointCacheKey ckey;
+int __ec_store(const text *key, const text *response, bool error) {
 	EndpointCacheEntry *entry;
 	bool found;
 
@@ -86,20 +100,22 @@ int __ec_store(const char *key, const char *response, bool error) {
 		__ec_init();
 	}
 
-	strncpy(ckey.v, key, EC_KEY_MAX_LENGTH);
-	entry = hash_search(hash_tab, (void *)&ckey, HASH_ENTER, &found);
-	Assert(_data == NULL);
+	set_key_buf(key);
+	entry = hash_search(hash_tab, (const void *)key_buf, HASH_ENTER, &found);
+	Assert(entry);
 
 	// store data
-	strncpy(entry->response, response, EC_RESPONSE_MAX_LENGTH);
+	strncpy(entry->response,
+		VARDATA_ANY(response),
+		VARSIZE_ANY_EXHDR(response) > EC_RESPONSE_MAX_LENGTH ?
+			EC_RESPONSE_MAX_LENGTH : VARSIZE_ANY_EXHDR(response));
 	entry->error = error;
 
 	__ec_print_elements();
 	return 0;
 }
 
-int __ec_find(const char *key, char **response_out, bool *error_out) {
-	EndpointCacheKey ckey;
+int __ec_find(const text *key, char **response_out, bool *error_out) {
 	EndpointCacheEntry *entry;
 	bool found;
 
@@ -107,8 +123,8 @@ int __ec_find(const char *key, char **response_out, bool *error_out) {
 		return -1;
 	}
 
-	strncpy(ckey.v, key, EC_KEY_MAX_LENGTH);
-	entry = hash_search(hash_tab, (void *)&ckey, HASH_FIND, &found);
+	set_key_buf(key);
+	entry = hash_search(hash_tab, (const void *)key_buf, HASH_FIND, &found);
 
 	if (entry == NULL) {
 		return -1;
@@ -127,8 +143,7 @@ int __ec_items_count(void) {
 	return hash_get_num_entries(hash_tab);
 }
 
-int __ec_remove(const char *key) {
-	EndpointCacheKey ckey;
+int __ec_remove(const text *key) {
 	EndpointCacheEntry *entry;
 	bool found;
 
@@ -136,8 +151,8 @@ int __ec_remove(const char *key) {
 		return -1;
 	}
 
-	strncpy(ckey.v, key, EC_KEY_MAX_LENGTH);
-	entry = hash_search(hash_tab, (void *)&ckey, HASH_REMOVE, &found);
+	set_key_buf(key);
+	entry = hash_search(hash_tab, (const void *)key_buf, HASH_REMOVE, &found);
 
 	if (entry == NULL) {
 		return -1;

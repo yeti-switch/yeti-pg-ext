@@ -2,7 +2,6 @@
 #include "log.h"
 #include "transport.h"
 #include "endpoints_cache.h"
-#include "utils.h"
 
 #include "funcapi.h"
 
@@ -119,9 +118,10 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	size_t l, size, lrn_length, tag_length = 0;
 	int ret, response_code;
 	HeapTuple t;
-	char *v[2], *local_number, *response_moc;
+	char *v[2], *response_moc;
 	bool error_moc;
 	int32 database_id;
+	text *local_number;
 	char msg[MSG_SZ];
 	AttInMetadata *attinmeta;
 	TupleDesc tdesc;
@@ -133,12 +133,10 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 					   "that cannot accept type record")));
 
 	database_id = PG_GETARG_INT32(0);
-	local_number = STR_FROM_TEXTARG(1);
+	local_number = PG_GETARG_TEXT_P(1);
 
 	// make mocking response if needed
 	if (EndpointsCache.find(local_number, &response_moc, &error_moc) == 0) {
-		pfree(local_number); local_number = NULL;
-
 		if (error_moc) {
 			warn("%s", response_moc);
 			PG_RETURN_NULL();
@@ -156,7 +154,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	}
 
 	//send request
-	l = strlen(local_number);
+	l = VARSIZE_ANY_EXHDR(local_number);
 	size = l + TAGGED_HDR_SIZE;
 
 	if(size > MSG_SZ) {
@@ -173,8 +171,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	msg[0] = database_id;
 	msg[1] = TAGGED_REQ_VERSION;
 	msg[2] = l;
-	memcpy(msg+TAGGED_HDR_SIZE,local_number,l);
-	pfree(local_number); local_number = NULL;
+	memcpy(msg+TAGGED_HDR_SIZE,VARDATA_ANY(local_number),l);
 
 	ret = Transport.send_msg(msg, size);
 
@@ -266,10 +263,11 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	size_t l, size, lrn_length, tag_length;
 	int ret, response_code;
 	HeapTuple t;
-	char *v[3], *local_number, *response_moc;
+	char *v[3], *response_moc;
 	char *err_text = NULL;
 	bool error_moc;
 	int32 database_id;
+	text *local_number;
 	char msg[MSG_SZ];
 	AttInMetadata *attinmeta;
 	TupleDesc tdesc;
@@ -281,12 +279,10 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 					   "that cannot accept type record")));
 
 	database_id = PG_GETARG_INT32(0);
-	local_number = STR_FROM_TEXTARG(1);
+	local_number = PG_GETARG_TEXT_P(1);
 
 	// make mocking response if needed
 	if (EndpointsCache.find(local_number, &response_moc, &error_moc) == 0) {
-		pfree(local_number); local_number = NULL;
-
 		if (error_moc) {
 			v[0] = NULL; //lrn
 			v[1] = NULL; // tag
@@ -308,11 +304,10 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 
 	//send request
 
-	l = strlen(local_number);
+	l = VARSIZE_ANY_EXHDR(local_number);
 	size = l + TAGGED_HDR_SIZE;
 
 	if(size > MSG_SZ) {
-		pfree(local_number); local_number = NULL;
 		goto_exit_with_error("local: local_number is to long");
 	}
 
@@ -326,8 +321,7 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	msg[0] = database_id;
 	msg[1] = TAGGED_REQ_VERSION;
 	msg[2] = l;
-	memcpy(msg+TAGGED_HDR_SIZE,local_number,l);
-	pfree(local_number); local_number = NULL;
+	memcpy(msg+TAGGED_HDR_SIZE,VARDATA_ANY(local_number),l);
 
 	ret = Transport.send_msg(msg, size);
 
