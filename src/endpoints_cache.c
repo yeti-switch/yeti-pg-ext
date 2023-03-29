@@ -103,6 +103,7 @@ int __ec_store(const text *key, const text *response, bool error) {
 	Assert(entry);
 
 	// store data
+	bzero(entry->response, EC_RESPONSE_MAX_LENGTH);
 	strncpy(entry->response,
 		VARDATA_ANY(response),
 		Min(VARSIZE_ANY_EXHDR(response), EC_RESPONSE_MAX_LENGTH));
