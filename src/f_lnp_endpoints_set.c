@@ -15,7 +15,6 @@ Datum lnp_endpoints_set(PG_FUNCTION_ARGS)
 	ArrayIterator it;
 	ArrayType *input= PG_GETARG_ARRAYTYPE_P(0);
 
-	Transport.shut_down_all_connections();
 	Transport.remove_all_endpoints();
 
 	//apply new ones
