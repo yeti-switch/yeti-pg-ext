@@ -2,6 +2,7 @@
 #include "log.h"
 #include "transport.h"
 #include "endpoints_cache.h"
+#include "request_id.h"
 
 #include "funcapi.h"
 
@@ -10,13 +11,13 @@
 #define LOG_PREFIX "lnp_resolve: "
 
 #define TAGGED_REQ_VERSION 0
-#define TAGGED_HDR_SIZE 3
-#define TAGGED_ERR_RESPONSE_HDR_SIZE 2
+#define TAGGED_HDR_SIZE 7
+#define TAGGED_ERR_RESPONSE_HDR_SIZE 6
 #define TAGGED_RESPONSE_CODE_SUCCESS 0
 
 #define CNAM_REQ_VERSION 1
-#define CNAM_HDR_SIZE 6
-#define CNAM_RESPONSE_HDR_SIZE 4
+#define CNAM_HDR_SIZE 10
+#define CNAM_RESPONSE_HDR_SIZE 8
 
 #define MSG_SZ 1024 * 2
 #define ERROR_TEXT_SZ MSG_SZ
@@ -33,6 +34,8 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 	int n;
 	char msg[MSG_SZ];
 	text *ret;
+	uint32_t req_id, resp_id;
+	bool stop;
 
 	int32 database_id = PG_GETARG_INT32(0);
 	text *json_data = PG_GETARG_TEXT_P(1);
@@ -42,6 +45,16 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 	}
 
 	//send request
+
+	/* layout:
+	*    4 bytes - request id
+	*    1 byte  - database id
+	*    1 byte  - request version
+	*    4 byte  - json_data length
+	*    n bytes - json_data
+	*/
+
+	req_id = gen_request_id();
 	json_data_size = VARSIZE_ANY_EXHDR(json_data);
 	size = json_data_size + CNAM_HDR_SIZE;
 
@@ -49,16 +62,11 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 		exit_err("message is to long");
 	}
 
-	/* layout:
-	*    1 byte - database id
-	*    1 byte - request version
-	*    4 byte - json_data length
-	*    n bytes - json_data
-	*/
 	memset(&msg, '\0', MSG_SZ);
-	msg[0] = database_id;
-	msg[1] = CNAM_REQ_VERSION;
-	*(int *)(msg+2) = json_data_size;
+	*(uint32_t *)msg = req_id;
+	msg[4] = database_id;
+	msg[5] = CNAM_REQ_VERSION;
+	*(uint32_t *)(msg+6) = json_data_size;
 
 	memcpy(msg+CNAM_HDR_SIZE,VARDATA_ANY(json_data),json_data_size);
 	n = Transport.send_msg(msg, size);
@@ -68,27 +76,43 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS)
 	}
 
 	//receive response
-	memset(&msg, '\0', MSG_SZ);
-	n = Transport.recv_msg(&msg, MSG_SZ);
-
-	if(n >= 0) {
-		msg[n] = '\0';
-	} else {
-		exit_err("can't get reply");
-	}
 
 	/* layout:
-	 *    4 bytes  - json_reply_size (n)
+	 *    4 bytes - response id
+	 *    4 bytes - json_reply_size (n)
 	 *    n bytes - json_data
 	 */
 
-	//check response layout
-	if(n < CNAM_RESPONSE_HDR_SIZE) { //response must have at least 4 bytes
-		exit_err("unexpected response (response too small)");
+	stop = false;
+	while (!stop) {
+		memset(&msg, '\0', MSG_SZ);
+		n = Transport.recv_msg(&msg, MSG_SZ);
+
+		if(n >= 0) {
+			msg[n] = '\0';
+		} else {
+			exit_err("can't get reply");
+		}
+
+		//check response layout
+		if(n < CNAM_RESPONSE_HDR_SIZE) { //response must have at least 8 bytes
+			warn("unexpected response (response too small)");
+			continue;
+		}
+
+		//check response id
+		resp_id = *(uint32_t *)msg;
+
+		if (resp_id != req_id) {
+			warn("invalid response id");
+			continue;
+		}
+
+		stop = true;
 	}
 
-	//check response code
-	json_data_size = *(int *)msg;
+	//check json_reply_size
+	json_data_size = *(uint32_t *)(msg+4);
 
 	//dbg("got cnam response size %ld",json_data_size);
 	if(!json_data_size) {
@@ -125,6 +149,8 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	char msg[MSG_SZ];
 	AttInMetadata *attinmeta;
 	TupleDesc tdesc;
+	uint32_t req_id, resp_id;
+	bool stop;
 
 	if (get_call_result_type(fcinfo, NULL, &tdesc) != TYPEFUNC_COMPOSITE)
 		ereport(ERROR,
@@ -154,6 +180,16 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	}
 
 	//send request
+
+	/* layout:
+	*    4 bytes - request id
+	*    1 byte  - database id
+	*    1 byte  - request version
+	*    1 byte  - number length
+	*    n bytes - number data
+	*/
+
+	req_id = gen_request_id();
 	l = VARSIZE_ANY_EXHDR(local_number);
 	size = l + TAGGED_HDR_SIZE;
 
@@ -161,35 +197,24 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 		exit_err("message is to long");
 	}
 
-	/* layout:
-	*    1 byte - database id
-	*    1 byte - request version
-	*    1 byte - number length
-	*    n bytes - number data
-	*/
 	memset(&msg, '\0', MSG_SZ);
-	msg[0] = database_id;
-	msg[1] = TAGGED_REQ_VERSION;
-	msg[2] = l;
+	*(uint32_t *)msg = req_id;
+	msg[4] = database_id;
+	msg[5] = TAGGED_REQ_VERSION;
+	msg[6] = l;
+
 	memcpy(msg+TAGGED_HDR_SIZE,VARDATA_ANY(local_number),l);
 
 	ret = Transport.send_msg(msg, size);
 
-	if(ret!= (int)size) {
+	if (ret!= (int)size) {
 		exit_err("can't send request");
 	}
 
 	//receive response
-	memset(&msg, '\0', MSG_SZ);
-	ret = Transport.recv_msg(&msg, MSG_SZ);
-
-	if(ret >= 0) {
-		msg[ret] = '\0';
-	} else {
-		exit_err("can't get reply");
-	}
 
 	/* layout:
+	 *    4 bytes - response id
 	 *    1 byte  - response code
 	 *    1 byte  - response length
 	 *    1 byte  - local routing number length
@@ -197,14 +222,37 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 	 *    k bytes - tag data (optional)
 	 */
 
-	//check response layout
-	if(ret < TAGGED_HDR_SIZE) { //response must have at least 3 bytes
-		exit_err("unexpected response (response too small)");
+	stop = false;
+	while (!stop) {
+		memset(&msg, '\0', MSG_SZ);
+		ret = Transport.recv_msg(&msg, MSG_SZ);
+
+		if(ret >= 0) {
+			msg[ret] = '\0';
+		} else {
+			exit_err("can't get reply");
+		}
+
+		//check response layout
+		if(ret < TAGGED_HDR_SIZE) { //response must have at least 7 bytes
+			warn("unexpected response (response too small)");
+			continue;
+		}
+
+		//check response id
+		resp_id = *(uint32_t *)msg;
+
+		if (resp_id != req_id) {
+			warn("invalid response id");
+			continue;
+		}
+
+		stop = true;
 	}
 
 	//check response code
-	response_code = msg[0];
-	l = msg[1];
+	response_code = msg[4];
+	l = msg[5];
 	dbg("got response code %d",response_code);
 	if(TAGGED_RESPONSE_CODE_SUCCESS!=response_code){
 		if(l > (ret-TAGGED_ERR_RESPONSE_HDR_SIZE)){
@@ -226,7 +274,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS)
 			l,ret-TAGGED_HDR_SIZE);
 	}
 
-	lrn_length = msg[2];
+	lrn_length = msg[6];
 	if(lrn_length > l) {
 		exit_err("malformed response "
 			"(claimed lrn_length %ld but total_length is %ld bytes only)",
@@ -271,6 +319,8 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	char msg[MSG_SZ];
 	AttInMetadata *attinmeta;
 	TupleDesc tdesc;
+	uint32_t req_id, resp_id;
+	bool stop;
 
 	if (get_call_result_type(fcinfo, NULL, &tdesc) != TYPEFUNC_COMPOSITE)
 		ereport(ERROR,
@@ -304,6 +354,15 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 
 	//send request
 
+	/* layout:
+	*    4 bytes - request id
+	*    1 byte - database id
+	*    1 byte - request version
+	*    1 byte - number length
+	*    n bytes - number data
+	*/
+
+	req_id = gen_request_id();
 	l = VARSIZE_ANY_EXHDR(local_number);
 	size = l + TAGGED_HDR_SIZE;
 
@@ -311,16 +370,11 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 		goto_exit_with_error("local: local_number is to long");
 	}
 
-	/* layout:
-	*    1 byte - database id
-	*    1 byte - request version
-	*    1 byte - number length
-	*    n bytes - number data
-	*/
 	memset(&msg, '\0', MSG_SZ);
-	msg[0] = database_id;
-	msg[1] = TAGGED_REQ_VERSION;
-	msg[2] = l;
+	*(uint32_t *)msg = req_id;
+	msg[4] = database_id;
+	msg[5] = TAGGED_REQ_VERSION;
+	msg[6] = l;
 	memcpy(msg+TAGGED_HDR_SIZE,VARDATA_ANY(local_number),l);
 
 	ret = Transport.send_msg(msg, size);
@@ -330,16 +384,9 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	}
 
 	//receive response
-	memset(&msg, '\0', MSG_SZ);
-	ret = Transport.recv_msg(&msg, MSG_SZ);
-
-	if(ret >= 0) {
-		msg[ret] = '\0';
-	} else {
-		goto_exit_with_error("local: reply timeout");
-	}
 
 	/* layout:
+	 *    4 bytes - response id
 	 *    1 byte  - response code
 	 *    1 byte  - response length
 	 *    1 byte  - local routing number length
@@ -347,14 +394,37 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 	 *    k bytes - tag data (optional)
 	 */
 
-	//check response layout
-	if(ret < TAGGED_HDR_SIZE) { //response must have at least 3 bytes
-		goto_exit_with_error("local: unexpected response (response is too small)");
+	stop = false;
+	while (!stop) {
+		memset(&msg, '\0', MSG_SZ);
+		ret = Transport.recv_msg(&msg, MSG_SZ);
+
+		if(ret >= 0) {
+			msg[ret] = '\0';
+		} else {
+			goto_exit_with_error("local: reply timeout");
+		}
+
+		//check response layout
+		if(ret < TAGGED_HDR_SIZE) { //response must have at least 7 bytes
+			warn("local: unexpected response (response is too smal	l)");
+			continue;
+		}
+
+		//check response id
+		resp_id = *(uint32_t *)msg;
+
+		if (resp_id != req_id) {
+			warn("invalid response id");
+			continue;
+		}
+
+		stop = true;
 	}
 
 	//check response code
-	response_code = msg[0];
-	l = msg[1];
+	response_code = msg[4];
+	l = msg[5];
 	dbg("got response code %d",response_code);
 	if(TAGGED_RESPONSE_CODE_SUCCESS!=response_code){
 		if(l > (ret-TAGGED_ERR_RESPONSE_HDR_SIZE)){
@@ -377,7 +447,7 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS)
 			l, ret-TAGGED_HDR_SIZE);
 	}
 
-	lrn_length = msg[2];
+	lrn_length = msg[6];
 	if(lrn_length > l) {
 		goto_exit_with_error("local: malformed response "
 			"(claimed lrn_length %ld but total_length is %ld bytes only)",
