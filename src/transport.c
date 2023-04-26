@@ -70,7 +70,6 @@ int __tr_init(void) {
 int __tr_add_endpoint(const char* uri) {
 	struct sockaddr_in sock_addr;
 	UriComponents uri_c;
-	bool is_udp_proto = false;
 
 	if (endpoints_count == MAX_ENDPOINTS){
 		warn("endpoints count limit (%d) reached", MAX_ENDPOINTS);
@@ -83,18 +82,11 @@ int __tr_add_endpoint(const char* uri) {
 		return -1;
 	}
 
-	is_udp_proto = (strlen(uri_c.proto) == 0);
-
-	if (is_udp_proto) {
-		// fill udp socket address struct
-		bzero(&sock_addr, sizeof(sock_addr));
-		sock_addr.sin_family = AF_INET;
-		sock_addr.sin_port = htons(uri_c.port);
-		sock_addr.sin_addr.s_addr = inet_addr(uri_c.host);
-	} else {
-		warn("can't add endpoint '%s', unsupported protocol '%s'", uri, uri_c.proto);
-		return -1;
-	}
+	// fill udp socket address struct
+	bzero(&sock_addr, sizeof(sock_addr));
+	sock_addr.sin_family = AF_INET;
+	sock_addr.sin_port = htons(uri_c.port);
+	sock_addr.sin_addr.s_addr = inet_addr(uri_c.host);
 
 	strcpy(endpoints[endpoints_count].url, uri);
 	endpoints[endpoints_count].id = endpoints_count;
@@ -135,11 +127,11 @@ int __tr_remove_all_endpoints(void) {
 int __tr_send_msg(const void *buf, size_t len) {
 	int n = -1;
 
-	struct sockaddr_in sock_addr;
+	struct sockaddr_in *sock_addr;
 
 	for (int i = curr_endpoint_index; i < endpoints_count; ++i) {
-		sock_addr = endpoints[i].sock_addr;
-		n = sendto(udp_socket_fd, buf, len, 0, (struct sockaddr*)&sock_addr, sizeof(sock_addr));
+		sock_addr = &endpoints[i].sock_addr;
+		n = sendto(udp_socket_fd, buf, len, 0, (struct sockaddr*)sock_addr, sizeof(struct sockaddr));
 
 		if (n < 0 || n != (int)len) {
 			dbg("can't send request");
