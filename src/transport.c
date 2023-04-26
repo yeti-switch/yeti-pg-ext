@@ -10,6 +10,7 @@
 #include <utils/array.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define LOG_PREFIX "transport: "
 
@@ -67,6 +68,8 @@ int __tr_init(void) {
 	}
 
 	__tr_set_timeout(DEFAULT_RECV_TIMEOUT_MSEC);
+
+	srand((unsigned)time(NULL));
 
 	return 0;
 }
