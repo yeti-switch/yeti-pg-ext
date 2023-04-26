@@ -13,6 +13,8 @@
 
 #define LOG_PREFIX "transport: "
 
+#define DEFAULT_RECV_TIMEOUT_MSEC 5000
+
 /*
  * local vars
 */
@@ -63,6 +65,8 @@ int __tr_init(void) {
 	if((udp_socket_fd = socket(PF_INET, SOCK_DGRAM, 0))<0){
 		err("cant create udp socket");
 	}
+
+	__tr_set_timeout(DEFAULT_RECV_TIMEOUT_MSEC);
 
 	return 0;
 }
