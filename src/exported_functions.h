@@ -18,6 +18,7 @@ Datum lnp_endpoints_set(PG_FUNCTION_ARGS);
 Datum lnp_endpoints_show(PG_FUNCTION_ARGS);
 
 Datum lnp_set_timeout(PG_FUNCTION_ARGS);
+Datum lnp_set_rtt_timeout(PG_FUNCTION_ARGS);
 
 Datum rank_dns_srv(PG_FUNCTION_ARGS);
 

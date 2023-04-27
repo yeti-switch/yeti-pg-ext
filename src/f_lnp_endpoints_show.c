@@ -1,6 +1,6 @@
 #include "exported_functions.h"
 #include "log.h"
-#include "transport.h"
+#include "resolver.h"
 #include "funcapi.h"
 #include <string.h>
 
@@ -20,7 +20,7 @@ Datum lnp_endpoints_show(PG_FUNCTION_ARGS)
 		ctx = SRF_FIRSTCALL_INIT();
 
 		mctx = MemoryContextSwitchTo(ctx->multi_call_memory_ctx);
-		ctx->max_calls = Transport.get_endpoints_count();
+		ctx->max_calls = Resolver.get_endpoints_count();
 
 		if (get_call_result_type(fcinfo, NULL, &tdesc) != TYPEFUNC_COMPOSITE)
 			ereport(ERROR,
@@ -48,7 +48,7 @@ Datum lnp_endpoints_show(PG_FUNCTION_ARGS)
 		v[0] = (char *) palloc(16*sizeof(char));
 		v[1] = (char *) palloc(MAX_ENDPOINT_LEN*sizeof(char));
 
-		const endpoint *ep = Transport.get_endpoint_at_index(i);
+		const endpoint *ep = Resolver.get_endpoint_at_index(i);
 
 		if (ep == NULL) {
 			PG_RETURN_NULL();

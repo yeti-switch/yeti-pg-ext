@@ -1,3 +1,7 @@
+yeti-pg-ext (1.3.9) stable; urgency=medium
+  * add function lnp_set_rtt_timeout(timeout_msec INTEGER)
+ -- Michael Furmur <furmur@pm.me>  Tue, 27 Apr 2023 13:56:21 +0300
+
 yeti-pg-ext (1.3.8p3) stable; urgency=medium
   * endpoints_cache: fix empty strings processing
  -- Michael Furmur <furmur@pm.me>  Wed, 29 Mar 2023 19:51:21 +0300

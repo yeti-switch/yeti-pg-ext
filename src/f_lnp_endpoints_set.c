@@ -1,6 +1,6 @@
 #include "exported_functions.h"
 #include "log.h"
-#include "transport.h"
+#include "resolver.h"
 
 #include <utils/array.h>
 
@@ -15,7 +15,7 @@ Datum lnp_endpoints_set(PG_FUNCTION_ARGS)
 	ArrayIterator it;
 	ArrayType *input= PG_GETARG_ARRAYTYPE_P(0);
 
-	Transport.remove_all_endpoints();
+	Resolver.remove_all_endpoints();
 
 	//apply new ones
 
@@ -29,7 +29,7 @@ Datum lnp_endpoints_set(PG_FUNCTION_ARGS)
 		if(is_null) continue;
 		memset(&c_uri, 0, MAX_ENDPOINT_LEN);
 		memcpy(&c_uri, VARDATA_ANY(uri), VARSIZE_ANY_EXHDR(uri));
-		Transport.add_endpoint(c_uri);
+		Resolver.add_endpoint(c_uri);
 	}
 
 	PG_RETURN_NULL();
