@@ -10,7 +10,7 @@
 #define DEFAULT_RTT_TIMEOUT_MSEC 5
 
 #define MSG_SZ 1024 * 2
-#define ERROR_TEXT_SZ MSG_SZ
+#define ERROR_SZ MSG_SZ
 
 #define CNFRM_RESPONSE_HDR_SIZE 4
 
@@ -21,22 +21,11 @@
 #define CNAM_HDR_SIZE 10
 #define CNAM_RESPONSE_HDR_SIZE 8
 
-#define alloc_text(text, size, fmt, ...)\
-	text = (char *)malloc((size + 1) * sizeof(char));\
-	snprintf(text, size, fmt, ## __VA_ARGS__);\
-
-#define free_text(text)\
-	if (text != NULL) {\
-		free(text);\
-		text = NULL;\
-	}\
-
-#define alloc_error(error, fmt, ...)\
-	alloc_text(error, ERROR_TEXT_SZ, fmt, ## __VA_ARGS__);\
-
-#define alloc_error_ptr(error_ptr, fmt, ...)\
+#define SET_ERROR(error_ptr, fmt, ...)\
 	if (error_ptr != NULL) {\
-		alloc_error(*error_ptr, fmt, ## __VA_ARGS__);\
+		memset(error_buf, '\0', sizeof(char)*ERROR_SZ);\
+		snprintf(error_buf, ERROR_SZ, fmt, ## __VA_ARGS__);\
+		*error_ptr = error_buf;\
 	}\
 
 /*
@@ -50,6 +39,7 @@ int rtt_timeout;
 struct pollfd poll_fd;
 char msg[MSG_SZ];
 size_t msg_len;
+char error_buf[ERROR_SZ];
 
 /*
  * func prototypes
@@ -157,7 +147,7 @@ int resolve(request *req, response *resp, char **error) {
 	int ready;
 
 	if (endpoints_count <= 0) {
-		alloc_error_ptr(error, "local: no configured endpoints");
+		SET_ERROR(error, "local: no configured endpoints");
 		return -1;
 	}
 
@@ -200,11 +190,11 @@ int resolve(request *req, response *resp, char **error) {
 		while (true) {
 
 			// receive message
-			memset(&msg, '\0', MSG_SZ);
+			memset(&msg, '\0', sizeof(char)*MSG_SZ);
 			n = Transport.recv_data(msg, MSG_SZ);
 
 			if (n < 0) {
-				alloc_error_ptr(error, "can't receive response");
+				SET_ERROR(error, "can't receive response");
 				return -1;
 			} else {
 				msg_len = n;
@@ -241,7 +231,7 @@ int resolve(request *req, response *resp, char **error) {
 		break;
 	}
 
-	alloc_error_ptr(error, "local: failed to resolve");
+	SET_ERROR(error, "local: failed to resolve");
 	return -1;
 }
 
@@ -276,11 +266,11 @@ int prepare_tagged_msg(const request *req, char **error) {
 	msg_len = data_size + TAGGED_HDR_SIZE;
 
 	if (msg_len > MSG_SZ) {
-		alloc_error_ptr(error, "message is to long");
+		SET_ERROR(error, "message is to long");
 		return -1;
 	}
 
-	memset(msg, '\0', MSG_SZ);
+	memset(msg, '\0', sizeof(char)*MSG_SZ);
 	*(uint32_t *)msg = req->id;
 	*(uint8_t *)(msg+4) = req->db_id;
 	*(uint8_t *)(msg+5) = req->type;
@@ -305,11 +295,11 @@ int prepare_json_msg(const request *req, char **error) {
 	msg_len = data_size + CNAM_HDR_SIZE;
 
 	if(msg_len > MSG_SZ) {
-		alloc_error_ptr(error, "message is to long");
+		SET_ERROR(error, "message is to long");
 		return -1;
 	}
 
-	memset(msg, '\0', MSG_SZ);
+	memset(msg, '\0', sizeof(char)*MSG_SZ);
 	*(uint32_t *)msg = req->id;
 	*(uint8_t *)(msg+4) = req->db_id;
 	*(uint8_t *)(msg+5) = req->type;
@@ -347,7 +337,7 @@ int parse_confrm_resp_msg(response *resp, char **error) {
 	//check response layout
 	//response must have at least 4 bytes
 	if (msg_len < CNFRM_RESPONSE_HDR_SIZE) {
-		alloc_error_ptr(error, "local: unexpected response (response too small)");
+		SET_ERROR(error, "local: unexpected response (response too small)");
 		return -1;
 	}
 
@@ -369,7 +359,7 @@ int parse_json_msg(response *resp, char **error) {
 	//check response layout
 	//response must have at least 8 bytes
 	if (msg_len < CNAM_RESPONSE_HDR_SIZE) {
-		alloc_error_ptr(error, "local: unexpected response (response too small)");
+		SET_ERROR(error, "local: unexpected response (response too small)");
 		return -1;
 	}
 
@@ -377,12 +367,12 @@ int parse_json_msg(response *resp, char **error) {
 	data_size = *(uint32_t *)(msg+4);
 
 	if (!data_size) {
-		alloc_error_ptr(error, "empty reply");
+		SET_ERROR(error, "empty reply");
 		return -1;
 	}
 
 	if (data_size > (msg_len - CNAM_RESPONSE_HDR_SIZE)) {
-		alloc_error_ptr(error, "unexpected response "
+		SET_ERROR(error, "unexpected response "
 			"(claimed response length %d but have only %ld bytes at the tail)",
 			data_size, msg_len-CNAM_RESPONSE_HDR_SIZE);
 		return -1;
@@ -392,7 +382,7 @@ int parse_json_msg(response *resp, char **error) {
 	resp->val = palloc(size);
 
 	if(!resp->val) {
-		alloc_error_ptr(error, "failed to allocate buffer for json data (size: %ld)", size);
+		SET_ERROR(error, "failed to allocate buffer for json data (size: %ld)", size);
 		return -1;
 	}
 
@@ -416,7 +406,7 @@ int parse_tagged_msg(response *resp, char **error) {
 	//check response layout
 	//response must have at least 7 bytes
 	if (msg_len < TAGGED_HDR_SIZE) {
-		alloc_error_ptr(error, "local: unexpected response (response too small)");
+		SET_ERROR(error, "local: unexpected response (response too small)");
 		return -1;
 	}
 
@@ -427,24 +417,24 @@ int parse_tagged_msg(response *resp, char **error) {
 	dbg("remoute: response code %d", resp_code);
 	if (TAGGED_RESPONSE_CODE_SUCCESS != resp_code) {
 		if (data_size > (msg_len-TAGGED_ERR_RESPONSE_HDR_SIZE)){
-			alloc_error_ptr(error, "local: unexpected response "
+			SET_ERROR(error, "local: unexpected response "
 				"(claimed response length %d but have only %ld bytes at the tail)",
 				data_size, msg_len-TAGGED_ERR_RESPONSE_HDR_SIZE);
 			return -1;
 		}
 
 		if(data_size) {
-			alloc_error_ptr(error, "remote: %d <%.*s>",
+			SET_ERROR(error, "remote: %d <%.*s>",
 				resp_code, data_size, msg+TAGGED_ERR_RESPONSE_HDR_SIZE);
 		} else {
-			alloc_error_ptr(error, "remote: %d", resp_code);
+			SET_ERROR(error, "remote: %d", resp_code);
 		}
 
 		return 1;
 	}
 
 	if (data_size > (msg_len-TAGGED_HDR_SIZE)){
-		alloc_error_ptr(error, "local: unexpected response "
+		SET_ERROR(error, "local: unexpected response "
 			"(claimed response length %d but have only %ld bytes at the tail)",
 			data_size, msg_len-TAGGED_HDR_SIZE);
 		return -1;
@@ -452,7 +442,7 @@ int parse_tagged_msg(response *resp, char **error) {
 
 	lrn_length = *(uint8_t *)(msg+6);
 	if (lrn_length > data_size) {
-		alloc_error_ptr(error, "local: malformed response "
+		SET_ERROR(error, "local: malformed response "
 			"(claimed lrn_length %d but total_length is %d bytes only)",
 			lrn_length, data_size);
 		return -1;

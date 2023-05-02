@@ -9,12 +9,6 @@
 
 #define LOG_PREFIX "lnp_resolve: "
 
-#define free_text(text)\
-	if (text != NULL) {\
-		free(text);\
-		text = NULL;\
-	}\
-
 PG_FUNCTION_INFO_V1(lnp_resolve_cnam);
 Datum lnp_resolve_cnam(PG_FUNCTION_ARGS) {
 	request req;
@@ -29,7 +23,6 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS) {
 	memset(&resp, 0, sizeof(response));
 	if (Resolver.resolve(&req, &resp, &error) != 0) {
 		err("%s", error);
-		free_text(error);
 		PG_RETURN_NULL();
 	}
 
@@ -76,7 +69,6 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS) {
 	memset(&resp, 0, sizeof(response));
 	if (Resolver.resolve(&req, &resp, &error) != 0) {
 		err("%s", error);
-		free_text(error);
 		PG_RETURN_NULL();
 	}
 
@@ -147,7 +139,6 @@ Datum lnp_resolve_tagged_with_error(PG_FUNCTION_ARGS) {
 	t = BuildTupleFromCStrings(attinmeta, v);
 
 	if(v[2]) v[2] = NULL;
-	free_text(error);
 	if(v[1]) pfree(v[1]);
 	if(v[0]) pfree(v[0]);
 
