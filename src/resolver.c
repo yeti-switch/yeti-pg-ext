@@ -97,9 +97,18 @@ int add_endpoint(const char* uri) {
 		return -1;
 	}
 
-	strcpy(endpoints[endpoints_count].url, uri);
-	endpoints[endpoints_count].id = endpoints_count;
+	endpoint *endp = &endpoints[endpoints_count];
+	memset(endp, 0, sizeof(endpoint));
+
+	if (parseAddr(uri, &endp->comps) == -1) {
+		warn("can't parse endpoint '%s'", uri);
+		return -1;
+	}
+
+	strncpy(endp->url, uri, MAX_ENDPOINT_LEN);
+	endp->id = endpoints_count;
 	endpoints_count++;
+
 	return 0;
 }
 
@@ -123,6 +132,7 @@ const endpoint *get_current_endpoint() {
 		return get_next_endpoint();
 	}
 }
+
 const endpoint *get_next_endpoint() {
 	if (curr_endpoint_index < 0) {
 		curr_endpoint_index = endpoints_count - 1;
@@ -164,7 +174,7 @@ int resolve(request *req, response *resp, char **error) {
 		}
 
 		// send message
-		n = Transport.send_data(msg, msg_len, endp->url);
+		n = Transport.send_data(msg, msg_len, endp->comps.host, endp->comps.port);
 
 		if (n < 0 || n != (int)msg_len) {
 			info("can't send request");

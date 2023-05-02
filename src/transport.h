@@ -8,7 +8,7 @@ struct transport {
 	int (*init)(void);
 	int (*get_socket_fd)();
 	int (*set_timeout)(long t);
-	int (*send_data)(const void *buf, size_t len, const char *url);
+	int (*send_data)(const void *buf, size_t len, const char *host, int port);
 	int (*recv_data)(void *buf, size_t len);
 	int (*shutdown)(void);
 };

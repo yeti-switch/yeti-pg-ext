@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "c.h"
+#include "uri_parser.h"
 
 #define TAGGED_REQ_VERSION 0
 #define CNAM_REQ_VERSION 1
@@ -13,6 +14,7 @@
 typedef struct {
 	int id;
 	char url[MAX_ENDPOINT_LEN];
+	UriComponents comps;
 } endpoint;
 
 typedef struct {
