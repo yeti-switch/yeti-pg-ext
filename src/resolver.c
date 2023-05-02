@@ -47,6 +47,9 @@ int endpoints_count;
 endpoint endpoints[MAX_ENDPOINTS];
 int curr_endpoint_index = -1;
 int rtt_timeout;
+struct pollfd poll_fd;
+char msg[MSG_SZ];
+size_t msg_len;
 
 /*
  * func prototypes
@@ -64,14 +67,14 @@ int remove_all_endpoints(void);
 int set_rtt_timeout(int timeout);
 int resolve(request *req, response *resp, char **error);
 
-int prepare(const request *req, char msg[MSG_SZ], size_t *size, char **error);
-int prepare_tagged(const request *req, char msg[MSG_SZ], size_t *size, char **error);
-int prepare_json(const request *req, char msg[MSG_SZ], size_t *size, char **error);
+int prepare_msg(const request *req, char **error);
+int prepare_tagged_msg(const request *req, char **error);
+int prepare_json_msg(const request *req, char **error);
 
-int parse(const request *req, const char msg[MSG_SZ], size_t size, response *resp, char **error);
-int parse_confrm_resp(const char msg[MSG_SZ], size_t size, response *resp, char **error);
-int parse_json(const char msg[MSG_SZ], size_t size, response *resp, char **error);
-int parse_tagged(const char msg[MSG_SZ], size_t size, response *resp, char **error);
+int parse_msg(const request *req, response *resp, char **error);
+int parse_confrm_resp_msg(response *resp, char **error);
+int parse_json_msg(response *resp, char **error);
+int parse_tagged_msg(response *resp, char **error);
 
 /*
  * 'resolver' struct
@@ -149,12 +152,9 @@ int remove_all_endpoints(void) {
 }
 
 int resolve(request *req, response *resp, char **error) {
-	size_t size;
 	int n = -1;
 	const endpoint *endp;
-	struct pollfd poll_fd;
 	int ready;
-	char msg[MSG_SZ];
 
 	if (endpoints_count <= 0) {
 		alloc_error_ptr(error, "local: no configured endpoints");
@@ -169,14 +169,14 @@ int resolve(request *req, response *resp, char **error) {
 		req->id = gen_request_id();
 
 		// prepare request message
-		if (prepare(req, msg, &size, error) != 0) {
+		if (prepare_msg(req, error) != 0) {
 			return -1;
 		}
 
 		// send message
-		n = Transport.send_data(msg, size, endp->url);
+		n = Transport.send_data(msg, msg_len, endp->url);
 
-		if (n < 0 || n != (int)size) {
+		if (n < 0 || n != (int)msg_len) {
 			info("can't send request");
 			endp = get_next_endpoint();
 			continue;
@@ -207,12 +207,13 @@ int resolve(request *req, response *resp, char **error) {
 				alloc_error_ptr(error, "can't receive response");
 				return -1;
 			} else {
-				msg[n] = '\0';
+				msg_len = n;
+				msg[msg_len] = '\0';
 			}
 
 			// parse message
 			memset(resp, 0, sizeof(response));
-			if (parse(req, msg, n, resp, error) != 0) {
+			if (parse_msg(req, resp, error) != 0) {
 				return -1;
 			}
 
@@ -249,18 +250,18 @@ int set_rtt_timeout(int timeout) {
 	return 0;
 }
 
-int prepare(const request *req, char msg[MSG_SZ], size_t *size, char **error) {
+int prepare_msg(const request *req, char **error) {
 	switch (req->type) {
 	case TAGGED_REQ_VERSION:
-		return prepare_tagged(req, msg, size, error);
+		return prepare_tagged_msg(req, error);
 	case CNAM_REQ_VERSION:
-		return prepare_json(req, msg, size, error);
+		return prepare_json_msg(req, error);
 	}
 
 	return -1;
 }
 
-int prepare_tagged(const request *req, char msg[MSG_SZ], size_t *size, char **error) {
+int prepare_tagged_msg(const request *req, char **error) {
 	size_t data_size;
 
 	/* layout:
@@ -272,9 +273,9 @@ int prepare_tagged(const request *req, char msg[MSG_SZ], size_t *size, char **er
 	 */
 
 	data_size = VARSIZE_ANY_EXHDR(req->data);
-	(*size) = data_size + TAGGED_HDR_SIZE;
+	msg_len = data_size + TAGGED_HDR_SIZE;
 
-	if ((*size) > MSG_SZ) {
+	if (msg_len > MSG_SZ) {
 		alloc_error_ptr(error, "message is to long");
 		return -1;
 	}
@@ -289,7 +290,7 @@ int prepare_tagged(const request *req, char msg[MSG_SZ], size_t *size, char **er
 	return 0;
 }
 
-int prepare_json(const request *req, char msg[MSG_SZ], size_t *size, char **error) {
+int prepare_json_msg(const request *req, char **error) {
 	size_t data_size;
 
 	/* layout:
@@ -301,9 +302,9 @@ int prepare_json(const request *req, char msg[MSG_SZ], size_t *size, char **erro
 	 */
 
 	data_size = VARSIZE_ANY_EXHDR(req->data);
-	(*size) = data_size + CNAM_HDR_SIZE;
+	msg_len = data_size + CNAM_HDR_SIZE;
 
-	if((*size) > MSG_SZ) {
+	if(msg_len > MSG_SZ) {
 		alloc_error_ptr(error, "message is to long");
 		return -1;
 	}
@@ -318,24 +319,24 @@ int prepare_json(const request *req, char msg[MSG_SZ], size_t *size, char **erro
 	return 0;
 }
 
-int parse(const request *req, const char msg[MSG_SZ], size_t size, response *resp, char **error) {
+int parse_msg(const request *req, response *resp, char **error) {
 
-	if (parse_confrm_resp(msg, size, resp, error) == 0) {
+	if (parse_confrm_resp_msg(resp, error) == 0) {
 		return 0;
 	}
 
 	switch (req->type) {
 	case TAGGED_REQ_VERSION:
-		return parse_tagged(msg, size, resp, error);
+		return parse_tagged_msg(resp, error);
 	case CNAM_REQ_VERSION:
-		return parse_json(msg, size, resp, error);
+		return parse_json_msg(resp, error);
 	}
 
 	return -1;
 }
 
-int parse_confrm_resp(const char msg[MSG_SZ], size_t size, response *resp, char **error) {
-	if (size > CNFRM_RESPONSE_HDR_SIZE) {
+int parse_confrm_resp_msg(response *resp, char **error) {
+	if (msg_len > CNFRM_RESPONSE_HDR_SIZE) {
 		return -1;
 	}
 
@@ -345,7 +346,7 @@ int parse_confrm_resp(const char msg[MSG_SZ], size_t size, response *resp, char 
 
 	//check response layout
 	//response must have at least 4 bytes
-	if (size < CNFRM_RESPONSE_HDR_SIZE) {
+	if (msg_len < CNFRM_RESPONSE_HDR_SIZE) {
 		alloc_error_ptr(error, "local: unexpected response (response too small)");
 		return -1;
 	}
@@ -355,8 +356,9 @@ int parse_confrm_resp(const char msg[MSG_SZ], size_t size, response *resp, char 
 	return 0;
 }
 
-int parse_json(const char msg[MSG_SZ], size_t size, response *resp, char **error) {
+int parse_json_msg(response *resp, char **error) {
 	uint32_t data_size;
+	size_t size;
 
 	/* layout:
 	 *    4 bytes - response id
@@ -366,7 +368,7 @@ int parse_json(const char msg[MSG_SZ], size_t size, response *resp, char **error
 
 	//check response layout
 	//response must have at least 8 bytes
-	if (size < CNAM_RESPONSE_HDR_SIZE) {
+	if (msg_len < CNAM_RESPONSE_HDR_SIZE) {
 		alloc_error_ptr(error, "local: unexpected response (response too small)");
 		return -1;
 	}
@@ -379,10 +381,10 @@ int parse_json(const char msg[MSG_SZ], size_t size, response *resp, char **error
 		return -1;
 	}
 
-	if (data_size > (size - CNAM_RESPONSE_HDR_SIZE)) {
+	if (data_size > (msg_len - CNAM_RESPONSE_HDR_SIZE)) {
 		alloc_error_ptr(error, "unexpected response "
 			"(claimed response length %d but have only %ld bytes at the tail)",
-			data_size, size-CNAM_RESPONSE_HDR_SIZE);
+			data_size, msg_len-CNAM_RESPONSE_HDR_SIZE);
 		return -1;
 	}
 
@@ -399,7 +401,7 @@ int parse_json(const char msg[MSG_SZ], size_t size, response *resp, char **error
 	return 0;
 }
 
-int parse_tagged(const char msg[MSG_SZ], size_t size, response *resp, char **error) {
+int parse_tagged_msg(response *resp, char **error) {
 	uint8_t data_size, lrn_length, tag_length, resp_code;
 
 	/* layout:
@@ -413,7 +415,7 @@ int parse_tagged(const char msg[MSG_SZ], size_t size, response *resp, char **err
 
 	//check response layout
 	//response must have at least 7 bytes
-	if (size < TAGGED_HDR_SIZE) {
+	if (msg_len < TAGGED_HDR_SIZE) {
 		alloc_error_ptr(error, "local: unexpected response (response too small)");
 		return -1;
 	}
@@ -424,10 +426,10 @@ int parse_tagged(const char msg[MSG_SZ], size_t size, response *resp, char **err
 
 	dbg("remoute: response code %d", resp_code);
 	if (TAGGED_RESPONSE_CODE_SUCCESS != resp_code) {
-		if (data_size > (size-TAGGED_ERR_RESPONSE_HDR_SIZE)){
+		if (data_size > (msg_len-TAGGED_ERR_RESPONSE_HDR_SIZE)){
 			alloc_error_ptr(error, "local: unexpected response "
 				"(claimed response length %d but have only %ld bytes at the tail)",
-				data_size, size-TAGGED_ERR_RESPONSE_HDR_SIZE);
+				data_size, msg_len-TAGGED_ERR_RESPONSE_HDR_SIZE);
 			return -1;
 		}
 
@@ -441,10 +443,10 @@ int parse_tagged(const char msg[MSG_SZ], size_t size, response *resp, char **err
 		return 1;
 	}
 
-	if (data_size > (size-TAGGED_HDR_SIZE)){
+	if (data_size > (msg_len-TAGGED_HDR_SIZE)){
 		alloc_error_ptr(error, "local: unexpected response "
 			"(claimed response length %d but have only %ld bytes at the tail)",
-			data_size, size-TAGGED_HDR_SIZE);
+			data_size, msg_len-TAGGED_HDR_SIZE);
 		return -1;
 	}
 
