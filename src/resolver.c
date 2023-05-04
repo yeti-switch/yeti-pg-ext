@@ -34,9 +34,9 @@
  * local vars
 */
 
-int endpoints_count;
+int endpoints_count = 0;
 endpoint endpoints[MAX_ENDPOINTS];
-int curr_endpoint_index = -1;
+int curr_endpoint_index = 0;
 int rtt_timeout;
 struct pollfd poll_fd;
 char msg[MSG_SZ];
@@ -145,11 +145,8 @@ const endpoint *get_current_endpoint() {
 }
 
 const endpoint *get_next_endpoint() {
-	if (curr_endpoint_index < 0) {
-		curr_endpoint_index = endpoints_count - 1;
-	} else {
-		--curr_endpoint_index;
-	}
+	curr_endpoint_index =
+		(curr_endpoint_index + 1) % endpoints_count;
 
 	dbg("get next endpoint index %d", curr_endpoint_index);
 	return get_endpoint_at_index(curr_endpoint_index);
@@ -158,7 +155,7 @@ const endpoint *get_next_endpoint() {
 int remove_all_endpoints(void) {
 	bzero(endpoints, sizeof(endpoint)*endpoints_count);
 	endpoints_count = 0;
-	curr_endpoint_index = -1;
+	curr_endpoint_index = 0;
 	return 0;
 }
 
