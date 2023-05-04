@@ -432,7 +432,7 @@ int parse_tagged_msg(response *resp, char **error) {
 	resp_code = *(uint8_t *)(msg+4);
 	data_size = *(uint8_t *)(msg+5);
 
-	dbg("remoute: response code %d", resp_code);
+	dbg("remote: response code %d", resp_code);
 	if (TAGGED_RESPONSE_CODE_SUCCESS != resp_code) {
 		if (data_size > (msg_len-TAGGED_ERR_RESPONSE_HDR_SIZE)){
 			SET_ERROR(error, "local: unexpected response "
