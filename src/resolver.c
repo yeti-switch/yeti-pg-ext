@@ -34,11 +34,13 @@
  * local vars
 */
 
-int endpoints_count = 0;
 endpoint endpoints[MAX_ENDPOINTS];
+int endpoints_count = 0;
 int curr_endpoint_index = 0;
-int rtt_timeout;
+
 struct pollfd poll_fd;
+int rtt_timeout = DEFAULT_RTT_TIMEOUT_MSEC;
+
 char msg[MSG_SZ];
 size_t msg_len;
 char error_buf[ERROR_SZ];
@@ -87,9 +89,7 @@ const struct resolver Resolver = {
 */
 
 int init(void) {
-	endpoints_count = 0;
 	bzero(endpoints,sizeof(endpoint)*MAX_ENDPOINTS);
-	set_rtt_timeout(DEFAULT_RTT_TIMEOUT_MSEC);
 	return 0;
 }
 
