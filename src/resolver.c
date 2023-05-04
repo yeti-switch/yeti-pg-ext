@@ -4,6 +4,8 @@
 #include "request_id.h"
 
 #include <poll.h>
+#include <string.h>
+#include <arpa/inet.h>
 
 #define LOG_PREFIX "resolver: "
 
@@ -92,12 +94,13 @@ int init(void) {
 }
 
 int add_endpoint(const char* uri) {
+	endpoint *endp = &endpoints[endpoints_count];
+
 	if (endpoints_count == MAX_ENDPOINTS){
 		warn("endpoints count limit (%d) reached", MAX_ENDPOINTS);
 		return -1;
 	}
 
-	endpoint *endp = &endpoints[endpoints_count];
 	memset(endp, 0, sizeof(endpoint));
 
 	if (parseAddr(uri, &endp->comps) == -1) {
@@ -105,8 +108,16 @@ int add_endpoint(const char* uri) {
 		return -1;
 	}
 
-	strncpy(endp->url, uri, MAX_ENDPOINT_LEN);
 	endp->id = endpoints_count;
+	strncpy(endp->url, uri, MAX_ENDPOINT_LEN);
+
+	endp->addr.sin_family = AF_INET;
+	endp->addr.sin_port = htons(endp->comps.port);
+	if(0==inet_aton(endp->comps.host, &endp->addr.sin_addr.s_addr)) {
+		warn("invalid host in endpoint '%s'", uri);
+		return -1;
+	}
+
 	endpoints_count++;
 
 	return 0;
@@ -174,7 +185,7 @@ int resolve(request *req, response *resp, char **error) {
 		}
 
 		// send message
-		n = Transport.send_data(msg, msg_len, endp->comps.host, endp->comps.port);
+		n = Transport.send_data(msg, msg_len, &endp->addr);
 
 		if (n < 0 || n != (int)msg_len) {
 			info("can't send request");

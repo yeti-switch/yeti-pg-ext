@@ -1,9 +1,11 @@
 #pragma once
 
-#include <stdlib.h>
-#include <stdint.h>
 #include "c.h"
 #include "uri_parser.h"
+
+#include <stdlib.h>
+#include <stdint.h>
+#include <netinet/in.h>
 
 #define TAGGED_REQ_VERSION 0
 #define CNAM_REQ_VERSION 1
@@ -13,6 +15,7 @@
 
 typedef struct {
 	int id;
+	struct sockaddr_in addr;
 	char url[MAX_ENDPOINT_LEN];
 	UriComponents comps;
 } endpoint;

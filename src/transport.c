@@ -28,7 +28,7 @@ int socket_fd;
 int __tr_init(void);
 int __tr_get_socket_fd(void);
 int __tr_set_timeout(long t);
-int __tr_send_data(const void *buf, size_t len, const char *host, int port);
+int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr);
 int __tr_recv_data(void *buf, size_t len);
 int __tr_shutdown(void);
 
@@ -71,20 +71,11 @@ int __tr_set_timeout(long t) {
 	return 0;
 }
 
-int __tr_send_data(const void *buf, size_t len, const char *host, int port) {
-	int n;
-	struct sockaddr_in sock_addr;
-
-	bzero(&sock_addr, sizeof(sock_addr));
-	sock_addr.sin_family = AF_INET;
-	sock_addr.sin_port = htons(port);
-	sock_addr.sin_addr.s_addr = inet_addr(host);
-
-	n = sendto(socket_fd, buf, len, 0,
-				(struct sockaddr*)&sock_addr,
-				sizeof(struct sockaddr));
-
-	return n;
+int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr) {
+	return sendto(
+		socket_fd, buf, len, 0,
+		(struct sockaddr*)addr,
+		sizeof(struct sockaddr));
 }
 
 int __tr_recv_data(void *buf, size_t len) {
