@@ -160,9 +160,8 @@ int remove_all_endpoints(void) {
 }
 
 int resolve(request *req, response *resp, char **error) {
-	int n = -1;
+	int n = -1, ready, endpoints_left;
 	const endpoint *endp;
-	int ready;
 
 	if (endpoints_count <= 0) {
 		SET_ERROR(error, "local: no configured endpoints");
@@ -170,8 +169,9 @@ int resolve(request *req, response *resp, char **error) {
 	}
 
 	endp = get_current_endpoint();
+	endpoints_left = endpoints_count;
 
-	while (endp != NULL) {
+	while (endp != NULL && endpoints_left--) {
 
 		// generate request id
 		req->id = gen_request_id();
