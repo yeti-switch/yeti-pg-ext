@@ -1,3 +1,7 @@
+yeti-pg-ext (1.3.10) stable; urgency=medium
+  * lnp: fix infinite endpoints failover
+ -- Michael Furmur <furmur@pm.me>  Wed, 10 May 2023 17:14:48 +0300
+
 yeti-pg-ext (1.3.9) stable; urgency=medium
   * drop nanomsg support
   * change PDU. add request_id
