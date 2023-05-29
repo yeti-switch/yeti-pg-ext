@@ -95,6 +95,7 @@ int init(void) {
 
 int add_endpoint(const char* uri) {
 	endpoint *endp = &endpoints[endpoints_count];
+	UriComponents comps;
 
 	if (endpoints_count == MAX_ENDPOINTS){
 		warn("endpoints count limit (%d) reached", MAX_ENDPOINTS);
@@ -103,7 +104,7 @@ int add_endpoint(const char* uri) {
 
 	memset(endp, 0, sizeof(endpoint));
 
-	if (parseAddr(uri, &endp->comps) == -1) {
+	if (parseAddr(uri, &comps) == -1) {
 		warn("can't parse endpoint '%s'", uri);
 		return -1;
 	}
@@ -112,8 +113,8 @@ int add_endpoint(const char* uri) {
 	strncpy(endp->url, uri, MAX_ENDPOINT_LEN);
 
 	endp->addr.sin_family = AF_INET;
-	endp->addr.sin_port = htons(endp->comps.port);
-	if(0==inet_aton(endp->comps.host, &endp->addr.sin_addr.s_addr)) {
+	endp->addr.sin_port = htons(comps.port);
+	if(0==inet_aton(comps.host, &endp->addr.sin_addr.s_addr)) {
 		warn("invalid host in endpoint '%s'", uri);
 		return -1;
 	}

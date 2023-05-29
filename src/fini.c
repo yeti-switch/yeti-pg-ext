@@ -6,8 +6,9 @@
 
 #define LOG_PREFIX ""
 
-void _PG_fini(void){
-	Transport.shutdown();
+void _PG_fini(void)
+{
+	Transport.shutdown_socket();
 	EndpointsCache.destroy();
 	tbf_fini();
 }

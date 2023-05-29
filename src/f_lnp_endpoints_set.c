@@ -1,6 +1,7 @@
 #include "exported_functions.h"
 #include "log.h"
 #include "resolver.h"
+#include "transport.h"
 
 #include <utils/array.h>
 
@@ -14,6 +15,10 @@ Datum lnp_endpoints_set(PG_FUNCTION_ARGS)
 	bool is_null;
 	ArrayIterator it;
 	ArrayType *input= PG_GETARG_ARRAYTYPE_P(0);
+
+	if (Transport.get_socket_fd() < 0) {
+		Transport.init_socket();
+	}
 
 	Resolver.remove_all_endpoints();
 

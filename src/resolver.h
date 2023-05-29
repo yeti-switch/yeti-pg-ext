@@ -17,7 +17,6 @@ typedef struct {
 	int id;
 	struct sockaddr_in addr;
 	char url[MAX_ENDPOINT_LEN];
-	UriComponents comps;
 } endpoint;
 
 typedef struct {

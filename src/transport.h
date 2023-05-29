@@ -6,11 +6,12 @@
 
 struct transport {
 	int (*init)(void);
+	int (*init_socket)(void);
 	int (*get_socket_fd)();
 	int (*set_timeout)(long t);
 	int (*send_data)(const void *buf, size_t len, const struct sockaddr_in *addr);
 	int (*recv_data)(void *buf, size_t len);
-	int (*shutdown)(void);
+	int (*shutdown_socket)(void);
 };
 
 extern const struct transport Transport;

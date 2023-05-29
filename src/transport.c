@@ -19,18 +19,19 @@
  * local vars
 */
 
-int socket_fd;
+int socket_fd = -1;
 
 /*
  * func prototypes
 */
 
 int __tr_init(void);
+int __tr_init_socket(void);
 int __tr_get_socket_fd(void);
 int __tr_set_timeout(long t);
 int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr);
 int __tr_recv_data(void *buf, size_t len);
-int __tr_shutdown(void);
+int __tr_shutdown_socket(void);
 
 /*
  * 'transport' struct
@@ -38,11 +39,12 @@ int __tr_shutdown(void);
 
 const struct transport Transport = {
 	.init = __tr_init,
+	.init_socket = __tr_init_socket,
 	.get_socket_fd = __tr_get_socket_fd,
 	.set_timeout = __tr_set_timeout,
 	.send_data = __tr_send_data,
 	.recv_data = __tr_recv_data,
-	.shutdown = __tr_shutdown
+	.shutdown_socket = __tr_shutdown_socket
 };
 
 /*
@@ -50,12 +52,20 @@ const struct transport Transport = {
 */
 
 int __tr_init(void) {
+	srand((unsigned)time(NULL));
+	return 0;
+}
+
+int __tr_init_socket(void) {
+	if (socket_fd >= 0) {
+		return -1;
+	}
+
 	if((socket_fd = socket(PF_INET, SOCK_DGRAM, 0))<0){
 		err("cant create udp socket");
 	}
 
 	__tr_set_timeout(DEFAULT_RECV_TIMEOUT_MSEC);
-	srand((unsigned)time(NULL));
 	return 0;
 }
 
@@ -64,6 +74,10 @@ int __tr_get_socket_fd(void) {
 }
 
 int __tr_set_timeout(long t) {
+	if (socket_fd < 0) {
+		return -1;
+	}
+
 	struct timeval tv;
 	tv.tv_sec = t / 1000;
 	tv.tv_usec = (t % 1000) * 1000;
@@ -72,6 +86,10 @@ int __tr_set_timeout(long t) {
 }
 
 int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr) {
+	if (socket_fd < 0) {
+		return -1;
+	}
+
 	return sendto(
 		socket_fd, buf, len, 0,
 		(struct sockaddr*)addr,
@@ -79,13 +97,22 @@ int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr) 
 }
 
 int __tr_recv_data(void *buf, size_t len) {
+	if (socket_fd < 0) {
+		return -1;
+	}
+
 	int n;
 	n = recvfrom(socket_fd, buf, len, 0, NULL, NULL);
 	return n;
 }
 
-int __tr_shutdown(void) {
+int __tr_shutdown_socket(void) {
+	if (socket_fd < 0) {
+		return -1;
+	}
+
 	shutdown(socket_fd, SHUT_RDWR);
 	close(socket_fd);
+	socket_fd = -1;
 	return 0;
 }
