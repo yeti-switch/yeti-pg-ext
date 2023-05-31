@@ -1,6 +1,6 @@
 yeti-pg-ext (1.3.11) stable; urgency=medium
-  * single socket for backends
- -- Michael Furmur <furmur@pm.me>  Wed, 29 May 2023 19:54:48 +0300
+  * lnp: fix resolving. use separate UDP socket for each pg backend
+ -- Michael Furmur <furmur@pm.me>  Wed, 31 May 2023 19:12:08 +0300
 
 yeti-pg-ext (1.3.10) stable; urgency=medium
   * lnp: fix infinite endpoints failover
