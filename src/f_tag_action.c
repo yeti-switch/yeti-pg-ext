@@ -1,8 +1,10 @@
 #include "exported_functions.h"
 #include "log.h"
+
+#include "varatt.h"
 #include "utils/array.h"
-#include "catalog/pg_type.h"
 #include "utils/typcache.h"
+#include "catalog/pg_type.h"
 
 #define LOG_PREFIX "tag_action(): "
 
@@ -52,7 +54,7 @@ Datum tag_action(PG_FUNCTION_ARGS)
 
     if(PG_ARGISNULL(ARG_OP)) {
         //return copy of the array a if action is NULL
-        PG_RETURN_ARRAYTYPE_P(DatumGetArrayTypePCopy(PG_GETARG_ARRAYTYPE_P(ARG_A)));
+        PG_RETURN_ARRAYTYPE_P(PG_GETARG_ARRAYTYPE_P_COPY(ARG_A));
     }
 
     op = PG_GETARG_INT32(ARG_OP);
@@ -66,7 +68,7 @@ Datum tag_action(PG_FUNCTION_ARGS)
     case OP_REPLACE:
 
         //return the copy of the array b
-        PG_RETURN_ARRAYTYPE_P(DatumGetArrayTypePCopy(PG_GETARG_ARRAYTYPE_P(ARG_B)));
+        PG_RETURN_ARRAYTYPE_P(PG_GETARG_ARRAYTYPE_P_COPY(ARG_B));
 
     case OP_REMOVE:
     case OP_APPEND:

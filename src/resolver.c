@@ -3,6 +3,8 @@
 #include "transport.h"
 #include "request_id.h"
 
+#include "varatt.h"
+
 #include <poll.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -114,7 +116,7 @@ int add_endpoint(const char* uri) {
 
 	endp->addr.sin_family = AF_INET;
 	endp->addr.sin_port = htons(comps.port);
-	if(0==inet_aton(comps.host, &endp->addr.sin_addr.s_addr)) {
+	if(0==inet_aton(comps.host, &endp->addr.sin_addr)) {
 		warn("invalid host in endpoint '%s'", uri);
 		return -1;
 	}

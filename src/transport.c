@@ -74,11 +74,12 @@ int __tr_get_socket_fd(void) {
 }
 
 int __tr_set_timeout(long t) {
+	struct timeval tv;
+
 	if (socket_fd < 0) {
 		return -1;
 	}
 
-	struct timeval tv;
 	tv.tv_sec = t / 1000;
 	tv.tv_usec = (t % 1000) * 1000;
 	setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
@@ -97,11 +98,12 @@ int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr) 
 }
 
 int __tr_recv_data(void *buf, size_t len) {
+	int n;
+
 	if (socket_fd < 0) {
 		return -1;
 	}
 
-	int n;
 	n = recvfrom(socket_fd, buf, len, 0, NULL, NULL);
 	return n;
 }

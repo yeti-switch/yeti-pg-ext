@@ -13,6 +13,7 @@ Datum lnp_endpoints_show(PG_FUNCTION_ARGS)
 	FuncCallContext *ctx;
 	AttInMetadata *attinmeta;
 	TupleDesc tdesc;
+	const endpoint *ep;
 
 	if (SRF_IS_FIRSTCALL()){
 		MemoryContext mctx;
@@ -48,7 +49,7 @@ Datum lnp_endpoints_show(PG_FUNCTION_ARGS)
 		v[0] = (char *) palloc(16*sizeof(char));
 		v[1] = (char *) palloc(MAX_ENDPOINT_LEN*sizeof(char));
 
-		const endpoint *ep = Resolver.get_endpoint_at_index(i);
+		ep = Resolver.get_endpoint_at_index(i);
 
 		if (ep == NULL) {
 			PG_RETURN_NULL();

@@ -1,6 +1,7 @@
 #include "replace_rand.h"
 #include "log.h"
 
+#include <varatt.h>
 #include <utils/array.h>
 
 #include <stdlib.h>
@@ -172,5 +173,5 @@ Datum get_in_copy(PG_FUNCTION_ARGS){
 }
 
 Datum get_in_copy_array(PG_FUNCTION_ARGS){
-	PG_RETURN_ARRAYTYPE_P(DatumGetArrayTypePCopy(PG_GETARG_ARRAYTYPE_P(0)));
+	PG_RETURN_ARRAYTYPE_P(PG_GETARG_ARRAYTYPE_P_COPY(0));
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "c.h"
+#include "postgres.h"
 #include "uri_parser.h"
 
 #include <stdlib.h>

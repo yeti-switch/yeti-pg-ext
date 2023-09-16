@@ -1,7 +1,9 @@
 #include "endpoints_cache.h"
 #include "log.h"
 
+#include "varatt.h"
 #include "utils/hsearch.h"
+
 #include <math.h>
 
 #define LOG_PREFIX "endpoints_cache: "
