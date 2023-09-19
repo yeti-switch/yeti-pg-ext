@@ -43,6 +43,7 @@ static HTAB *tbf_hash = NULL;
 static int tbf_hash_max = TBF_HASH_MAX_ENTRIES;
 static tbfSharedState *tbf = NULL;
 
+static shmem_request_hook_type prev_shmem_request_hook = NULL;
 static shmem_startup_hook_type prev_shmem_startup_hook = NULL;
 
 static Size tbf_shmem_size(void);
@@ -59,6 +60,15 @@ Size tbf_shmem_size(void)
     size = add_size(size, hash_estimate_size(tbf_hash_max, sizeof(tbfHashEntry)));
 
     return size;
+}
+
+static void tbf_shmem_request(void)
+{
+    if(prev_shmem_request_hook)
+        prev_shmem_request_hook();
+
+    RequestAddinShmemSpace(tbf_shmem_size());
+    RequestNamedLWLockTranche(tbf_shmem_entry_name, 1);
 }
 
 void tbf_shmem_startup(void)
@@ -98,8 +108,8 @@ void tbf_init(void)
     if(!process_shared_preload_libraries_in_progress)
         return;
 
-    RequestAddinShmemSpace(tbf_shmem_size());
-    RequestNamedLWLockTranche(tbf_shmem_entry_name, 1);
+    prev_shmem_request_hook = shmem_request_hook;
+    shmem_request_hook = tbf_shmem_request;
 
     prev_shmem_startup_hook = shmem_startup_hook;
     shmem_startup_hook = tbf_shmem_startup;
@@ -107,7 +117,10 @@ void tbf_init(void)
 
 void tbf_fini(void)
 {
-    if(tbf) shmem_startup_hook = prev_shmem_startup_hook;
+    if(tbf) {
+        shmem_request_hook = prev_shmem_request_hook;
+        shmem_startup_hook = prev_shmem_startup_hook;
+    }
 }
 
 PG_FUNCTION_INFO_V1(tbf_rate_check);
