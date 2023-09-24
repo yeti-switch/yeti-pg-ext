@@ -1,0 +1,58 @@
+name: build/deploy
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    steps:
+      - name: install aux deps
+        run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg
+
+      - name: add pgdg pkg repo
+        run: >
+          echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" >> /etc/apt/sources.list.d/pgdg.list &&
+          curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+
+      - run: apt update
+
+      - uses: actions/checkout@v4
+
+      - name: install build deps
+        run: apt -y --no-install-recommends build-dep .
+
+      - name: build package
+        run: make deb
+
+      - name: mv *.deb to the cwd
+        run: mv ../*.deb .
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pkg
+          path: '*.deb'
+          retention-days: 1
+
+  deploy:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    steps:
+      - name: install curl
+        run: apt update && apt -y --no-install-recommends install curl ca-certificates
+
+      - name: clone yeti-pg-ext repo for ci/deploy.sh
+        uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: pkg
+
+      - name: upload pkg to the bookworm 1.13
+        run: ci/deploy.sh bookworm 1.13 main *.deb
+        env:
+          PKG_API_BASE: ${{secrets.PKG_API_BASE}}

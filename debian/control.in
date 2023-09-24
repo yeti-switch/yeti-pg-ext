@@ -1,8 +1,8 @@
 Source: yeti-pg-ext
 Section: database
 Priority: optional
-Maintainer: Michael Furmur <m.furmur@gmail.com>
-Build-Depends: debhelper (>= 7.0.50~), postgresql-server-dev-all (>= 158~), libnanomsg-dev, dh-make, pkg-config, devscripts
+Maintainer: Michael Furmur <furmur@pm.me>
+Build-Depends: debhelper (>= 7.0.50~), postgresql-server-dev-all (>= 158~), dh-make, pkg-config, devscripts
 Standards-Version: 3.9.5
 
 Package: postgresql-PGVERSION-yeti
