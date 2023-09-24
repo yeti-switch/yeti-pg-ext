@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: generate debian/control
-        run: make -f debian/rules debian/control
+        run: pg_buildext updatecontrol && make -f debian/rules debian/control
 
       - name: install build deps
         run: apt -y --no-install-recommends build-dep .
