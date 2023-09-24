@@ -17,7 +17,7 @@ jobs:
           echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" >> /etc/apt/sources.list.d/pgdg.list &&
           curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
 
-      - run: apt update
+      - run: apt update && apt -y --no-install-recommends install postgresql-server-dev-all
 
       - uses: actions/checkout@v4
 
