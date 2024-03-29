@@ -1,6 +1,7 @@
 #include "transport.h"
 #include "log.h"
 
+#include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -10,16 +11,26 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <time.h>
+#include <string.h>
 
 #define LOG_PREFIX "transport: "
 
 #define DEFAULT_RECV_TIMEOUT_MSEC 5000
+#define ERROR_SZ 1024 * 2
+
+#define SET_ERROR(error_ptr, fmt, ...)\
+	if (error_ptr != NULL) {\
+		memset(tr_error_buf, '\0', sizeof(char)*ERROR_SZ);\
+		snprintf(tr_error_buf, ERROR_SZ, fmt, ## __VA_ARGS__);\
+		*error_ptr = tr_error_buf;\
+	}\
 
 /*
  * local vars
 */
 
 int socket_fd = -1;
+char tr_error_buf[ERROR_SZ];
 
 /*
  * func prototypes
@@ -29,8 +40,8 @@ int __tr_init(void);
 int __tr_init_socket(void);
 int __tr_get_socket_fd(void);
 int __tr_set_timeout(long t);
-int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr);
-int __tr_recv_data(void *buf, size_t len);
+int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr, char **error);
+int __tr_recv_data(void *buf, size_t len, char **error);
 int __tr_shutdown_socket(void);
 
 /*
@@ -86,25 +97,43 @@ int __tr_set_timeout(long t) {
 	return 0;
 }
 
-int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr) {
-	if (socket_fd < 0) {
-		return -1;
-	}
-
-	return sendto(
-		socket_fd, buf, len, 0,
-		(struct sockaddr*)addr,
-		sizeof(struct sockaddr));
-}
-
-int __tr_recv_data(void *buf, size_t len) {
+int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr, char **error) {
 	int n;
 
 	if (socket_fd < 0) {
+		SET_ERROR(error, "transport: send_data: error: invalid socket_fd");
+		return -1;
+	}
+
+	n = sendto(
+		socket_fd, buf, len, 0,
+		(struct sockaddr*)addr,
+		sizeof(struct sockaddr));
+
+	if(n < 0) {
+		int save_errno = errno;
+		if (save_errno)
+			SET_ERROR(error, "transport: send_data: errno: %s", strerror(save_errno));
+	}
+
+	return n;
+}
+
+int __tr_recv_data(void *buf, size_t len, char **error) {
+	int n;
+
+	if (socket_fd < 0) {
+		SET_ERROR(error, "transport: recv_data: error: invalid socket_fd");
 		return -1;
 	}
 
 	n = recvfrom(socket_fd, buf, len, 0, NULL, NULL);
+	if(n < 0) {
+		int save_errno = errno;
+		if (save_errno)
+			SET_ERROR(error, "transport: recv_data: errno: %s", strerror(save_errno));
+	}
+
 	return n;
 }
 

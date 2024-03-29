@@ -29,9 +29,9 @@
 
 #define SET_ERROR(error_ptr, fmt, ...)\
 	if (error_ptr != NULL) {\
-		memset(error_buf, '\0', sizeof(char)*ERROR_SZ);\
-		snprintf(error_buf, ERROR_SZ, fmt, ## __VA_ARGS__);\
-		*error_ptr = error_buf;\
+		memset(rs_error_buf, '\0', sizeof(char)*ERROR_SZ);\
+		snprintf(rs_error_buf, ERROR_SZ, fmt, ## __VA_ARGS__);\
+		*error_ptr = rs_error_buf;\
 	}\
 
 /*
@@ -47,7 +47,7 @@ int rtt_timeout = DEFAULT_RTT_TIMEOUT_MSEC;
 
 char msg[MSG_SZ];
 size_t msg_len;
-char error_buf[ERROR_SZ];
+char rs_error_buf[ERROR_SZ];
 
 /*
  * func prototypes
@@ -186,11 +186,16 @@ int resolve(request *req, response *resp, char **error) {
 			return -1;
 		}
 
-		// send message
-		n = Transport.send_data(msg, msg_len, &endp->addr);
+		// send request
+		dbg("send request: req_id %d", req->id);
+		n = Transport.send_data(msg, msg_len, &endp->addr, error);
 
 		if (n < 0 || n != (int)msg_len) {
-			info("can't send request");
+			if (error != NULL)
+				err("can't send request. error: %s", *error);
+			else
+				err("can't send request");
+
 			endp = get_next_endpoint();
 			continue;
 		}
@@ -214,10 +219,12 @@ int resolve(request *req, response *resp, char **error) {
 
 			// receive message
 			memset(&msg, '\0', sizeof(char)*MSG_SZ);
-			n = Transport.recv_data(msg, MSG_SZ);
+			n = Transport.recv_data(msg, MSG_SZ, error);
 
 			if (n < 0) {
-				SET_ERROR(error, "can't receive response");
+				if (error == NULL)
+					SET_ERROR(error, "can't receive response");
+
 				return -1;
 			} else {
 				msg_len = n;
@@ -232,9 +239,9 @@ int resolve(request *req, response *resp, char **error) {
 
 			if (resp->is_confrm) {
 				if (resp->id != req->id) {
-					dbg("invalid response id for confirmational message");
+					warn("invalid resp_id %d for confirmational message, current req_id %d", resp->id, req->id);
 				} else {
-					dbg("confirm msg is ok");
+					dbg("resp_id %d is confirmed, msg is ok", resp->id);
 				}
 
 				// receive full message (go to next iteration with continue)
@@ -243,11 +250,12 @@ int resolve(request *req, response *resp, char **error) {
 
 			//check response id
 			if (resp->id != req->id) {
-				warn("invalid response id");
+				warn("invalid resp_id %d, current req_id %d", resp->id, req->id);
 				continue;
 			}
 
 			// full response is available
+			dbg("resp_id %d", resp->id);
 			return 0;
 		}
 

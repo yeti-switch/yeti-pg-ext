@@ -9,8 +9,8 @@ struct transport {
 	int (*init_socket)(void);
 	int (*get_socket_fd)();
 	int (*set_timeout)(long t);
-	int (*send_data)(const void *buf, size_t len, const struct sockaddr_in *addr);
-	int (*recv_data)(void *buf, size_t len);
+	int (*send_data)(const void *buf, size_t len, const struct sockaddr_in *addr, char **error);
+	int (*recv_data)(void *buf, size_t len, char **error);
 	int (*shutdown_socket)(void);
 };
 
