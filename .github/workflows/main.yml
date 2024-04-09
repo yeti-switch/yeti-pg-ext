@@ -2,7 +2,10 @@ name: build/deploy
 on:
   pull_request:
   push:
-    branches: [ master ]
+    branches:
+      - "*"
+    tags:
+      - 'v*'
 
 jobs:
   build:
