@@ -222,7 +222,7 @@ int resolve(request *req, response *resp, char **error) {
 			n = Transport.recv_data(msg, MSG_SZ, error);
 
 			if (n < 0) {
-				if (error == NULL)
+				if (*error == NULL)
 					SET_ERROR(error, "can't receive response");
 
 				return -1;
