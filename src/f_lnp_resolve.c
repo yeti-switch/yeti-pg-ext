@@ -22,7 +22,7 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS) {
 
 	memset(&resp, 0, sizeof(response));
 	if (Resolver.resolve(&req, &resp, &error) != 0) {
-		warn("%s", error);
+		warn("%s", error ? error : "generic failure");
 		PG_RETURN_NULL();
 	}
 
@@ -55,7 +55,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS) {
 	// find mocking response if needed
 	if (EndpointsCache.find(req.data, &resp_moc, &error_moc) == 0) {
 		if (error_moc) {
-			warn("%s", resp_moc);
+			warn("%s", error_moc);
 			PG_RETURN_NULL();
 		}
 
@@ -68,7 +68,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS) {
 
 	memset(&resp, 0, sizeof(response));
 	if (Resolver.resolve(&req, &resp, &error) != 0) {
-		warn("%s", error);
+		warn("%s", error ? error : "generic failure");
 		PG_RETURN_NULL();
 	}
 
