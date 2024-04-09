@@ -1,7 +1,10 @@
 #include "exported_functions.h"
 #include "log.h"
 
+#if PGVER >= 1600
 #include "varatt.h"
+#endif
+
 #include "utils/array.h"
 #include "utils/typcache.h"
 #include "catalog/pg_type.h"

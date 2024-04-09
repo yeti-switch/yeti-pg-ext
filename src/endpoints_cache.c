@@ -1,7 +1,10 @@
 #include "endpoints_cache.h"
 #include "log.h"
 
+#if PGVER >= 1600
 #include "varatt.h"
+#endif
+
 #include "utils/hsearch.h"
 
 #include <math.h>

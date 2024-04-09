@@ -1,7 +1,10 @@
 #include "replace_rand.h"
 #include "log.h"
 
-#include <varatt.h>
+#if PGVER >= 1600
+#include "varatt.h"
+#endif
+
 #include <utils/array.h>
 
 #include <stdlib.h>

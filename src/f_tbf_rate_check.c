@@ -43,7 +43,9 @@ static HTAB *tbf_hash = NULL;
 static int tbf_hash_max = TBF_HASH_MAX_ENTRIES;
 static tbfSharedState *tbf = NULL;
 
+#if PGVER >= 1500
 static shmem_request_hook_type prev_shmem_request_hook = NULL;
+#endif
 static shmem_startup_hook_type prev_shmem_startup_hook = NULL;
 
 static Size tbf_shmem_size(void);
@@ -62,6 +64,7 @@ Size tbf_shmem_size(void)
     return size;
 }
 
+#if PGVER >= 1500
 static void tbf_shmem_request(void)
 {
     if(prev_shmem_request_hook)
@@ -70,6 +73,7 @@ static void tbf_shmem_request(void)
     RequestAddinShmemSpace(tbf_shmem_size());
     RequestNamedLWLockTranche(tbf_shmem_entry_name, 1);
 }
+#endif
 
 void tbf_shmem_startup(void)
 {
@@ -108,8 +112,13 @@ void tbf_init(void)
     if(!process_shared_preload_libraries_in_progress)
         return;
 
+#if PGVER >= 1500
     prev_shmem_request_hook = shmem_request_hook;
     shmem_request_hook = tbf_shmem_request;
+#else
+    RequestAddinShmemSpace(tbf_shmem_size());
+    RequestNamedLWLockTranche(tbf_shmem_entry_name, 1);
+#endif
 
     prev_shmem_startup_hook = shmem_startup_hook;
     shmem_startup_hook = tbf_shmem_startup;
@@ -118,7 +127,9 @@ void tbf_init(void)
 void tbf_fini(void)
 {
     if(tbf) {
+#if PGVER >= 1500
         shmem_request_hook = prev_shmem_request_hook;
+#endif
         shmem_startup_hook = prev_shmem_startup_hook;
     }
 }

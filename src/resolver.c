@@ -3,7 +3,9 @@
 #include "transport.h"
 #include "request_id.h"
 
+#if PGVER >= 1600
 #include "varatt.h"
+#endif
 
 #include <poll.h>
 #include <string.h>
