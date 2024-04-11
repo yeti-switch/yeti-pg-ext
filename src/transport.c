@@ -105,10 +105,10 @@ int __tr_send_data(const void *buf, size_t len, const struct sockaddr_in *addr, 
 		return -1;
 	}
 
-	n = sendto(
+	while((n = sendto(
 		socket_fd, buf, len, 0,
 		(struct sockaddr*)addr,
-		sizeof(struct sockaddr));
+		sizeof(struct sockaddr))) == -1 && errno == EINTR);
 
 	if(n < 0) {
 		int save_errno = errno;
@@ -127,7 +127,8 @@ int __tr_recv_data(void *buf, size_t len, char **error) {
 		return -1;
 	}
 
-	n = recvfrom(socket_fd, buf, len, 0, NULL, NULL);
+	while((n = recvfrom(socket_fd, buf, len, 0, NULL, NULL)) == -1 && errno == EINTR);
+
 	if(n < 0) {
 		int save_errno = errno;
 		if (save_errno)
