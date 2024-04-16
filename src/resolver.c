@@ -187,14 +187,14 @@ int resolve(request *req, response *resp, char **error) {
 		}
 
 		// send request
-		dbg("send request: req_id %d", req->id);
+		dbg("send request: req_id:%u", req->id);
 		n = Transport.send_data(msg, msg_len, &endp->addr, error);
 
 		if (n < 0 || n != (int)msg_len) {
 			if (error != NULL)
-				err("can't send request. error: %s", *error);
+				err("can't send request. req_id:%u, error: %s", req->id, *error);
 			else
-				err("can't send request");
+				err("can't send request req_id:%u", req->id);
 
 			endp = get_next_endpoint();
 			continue;
@@ -209,9 +209,14 @@ int resolve(request *req, response *resp, char **error) {
 
 		if (ready <= 0 || !(poll_fd.revents & POLLIN)) {
 			dbg("rtt expired or failed");
+			SET_ERROR(error, "local: rtt waiting expired or failed. req_id:%u",
+				req->id);
 			endp = get_next_endpoint();
 			continue;
 		}
+
+		//clear error
+		*error = NULL;
 
 		// use only this endpoint and don't take next one
 		// try to receive all messages
@@ -223,7 +228,7 @@ int resolve(request *req, response *resp, char **error) {
 
 			if (n < 0) {
 				if (*error == NULL)
-					SET_ERROR(error, "can't receive response");
+					SET_ERROR(error, "can't receive response for req_id:%u", req->id);
 
 				return -1;
 			} else {
@@ -239,9 +244,9 @@ int resolve(request *req, response *resp, char **error) {
 
 			if (resp->is_confrm) {
 				if (resp->id != req->id) {
-					warn("invalid resp_id %d for confirmational message, current req_id %d", resp->id, req->id);
+					warn("invalid resp_id:%u for confirmational message, current req_id:%u", resp->id, req->id);
 				} else {
-					dbg("resp_id %d is confirmed, msg is ok", resp->id);
+					dbg("resp_id:%u is confirmed, msg is ok", resp->id);
 				}
 
 				// receive full message (go to next iteration with continue)
@@ -250,7 +255,7 @@ int resolve(request *req, response *resp, char **error) {
 
 			//check response id
 			if (resp->id != req->id) {
-				warn("invalid resp_id %d, current req_id %d", resp->id, req->id);
+				warn("invalid resp_id:%u, current req_id:%u", resp->id, req->id);
 				continue;
 			}
 
@@ -262,7 +267,9 @@ int resolve(request *req, response *resp, char **error) {
 		break;
 	}
 
-	SET_ERROR(error, "local: failed to resolve");
+	if (*error == NULL)
+		SET_ERROR(error, "local: failed to get response for req_id:%u", req->id);
+
 	return -1;
 }
 
