@@ -165,7 +165,7 @@ int remove_all_endpoints(void) {
 }
 
 int resolve(request *req, response *resp, char **error) {
-	int n = -1, ready, endpoints_left;
+	int n, endpoints_left;
 	const endpoint *endp;
 
 	if (endpoints_count <= 0) {
@@ -204,16 +204,30 @@ int resolve(request *req, response *resp, char **error) {
 		memset(&poll_fd, 0, sizeof(struct pollfd));
 		poll_fd.fd = Transport.get_socket_fd();
 		poll_fd.events = POLLIN;
-		ready = poll(&poll_fd, 1, rtt_timeout);
-		dbg("poll rtt ready %d", ready);
 
-		if (ready <= 0 || !(poll_fd.revents & POLLIN)) {
-			dbg("rtt expired or failed");
-			SET_ERROR(error, "local: rtt waiting expired or failed. req_id:%u",
+		do {
+			n = poll(&poll_fd, 1, rtt_timeout);
+		} while(n < 0 && errno == EINTR);
+
+		if (n < 0) {
+			n = errno;
+			dbg("rtt failed with errno: %d", n);
+			SET_ERROR(error, "local: rtt poll failed with errno:%d, req_id:%u",
+				n, req->id);
+
+			endp = get_next_endpoint();
+			continue;
+		}
+
+		if (n == 0) {
+			dbg("rtt timeout", n);
+			SET_ERROR(error, "local: rtt waiting expired. req_id:%u",
 				req->id);
 			endp = get_next_endpoint();
 			continue;
 		}
+
+		dbg("rtt poll ready: %d", n);
 
 		//clear error
 		*error = NULL;
