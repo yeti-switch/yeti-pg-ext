@@ -14,11 +14,22 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS) {
 	request req;
 	response resp;
 	char *error = NULL;
+	char *resp_moc;
+	bool error_moc;
 
 	memset(&req, 0, sizeof(request));
 	req.db_id = PG_GETARG_INT32(0);
 	req.type = CNAM_REQ_VERSION;
 	req.data = PG_GETARG_TEXT_P(1);
+
+	// find mocking response if needed
+	if (EndpointsCache.find(req.data, &resp_moc, &error_moc) == 0) {
+		if (error_moc) {
+			warn("%s", resp_moc);
+			PG_RETURN_NULL();
+		}
+		PG_RETURN_CSTRING(resp_moc);
+	}
 
 	memset(&resp, 0, sizeof(response));
 	if (Resolver.resolve(&req, &resp, &error) != 0) {
@@ -55,7 +66,7 @@ Datum lnp_resolve_tagged(PG_FUNCTION_ARGS) {
 	// find mocking response if needed
 	if (EndpointsCache.find(req.data, &resp_moc, &error_moc) == 0) {
 		if (error_moc) {
-			warn("%s", error_moc);
+			warn("%s", resp_moc);
 			PG_RETURN_NULL();
 		}
 
