@@ -58,8 +58,8 @@ int init(void);
 int add_endpoint(const char* uri);
 int get_endpoints_count(void);
 const endpoint *get_endpoint_at_index(int index);
-const endpoint *get_current_endpoint();
-const endpoint *get_next_endpoint();
+const endpoint *get_current_endpoint(void);
+const endpoint *get_next_endpoint(void);
 int remove_all_endpoints(void);
 
 int set_rtt_timeout(int timeout);
@@ -220,7 +220,7 @@ int resolve(request *req, response *resp, char **error) {
 		}
 
 		if (n == 0) {
-			dbg("rtt timeout", n);
+			dbg("rtt timeout");
 			SET_ERROR(error, "local: rtt waiting expired. req_id:%u",
 				req->id);
 			endp = get_next_endpoint();

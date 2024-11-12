@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+uint32_t gen_request_id(void);
+
 uint32_t req_id;
 
 uint32_t gen_request_id() {
