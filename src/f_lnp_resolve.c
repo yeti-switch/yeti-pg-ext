@@ -4,6 +4,7 @@
 #include "endpoints_cache.h"
 
 #include "funcapi.h"
+#include "utils/builtins.h"
 
 #include <stdlib.h>
 
@@ -28,7 +29,7 @@ Datum lnp_resolve_cnam(PG_FUNCTION_ARGS) {
 			warn("%s", resp_moc);
 			PG_RETURN_NULL();
 		}
-		PG_RETURN_CSTRING(resp_moc);
+		return CStringGetTextDatum(resp_moc);
 	}
 
 	memset(&resp, 0, sizeof(response));
