@@ -1,3 +1,7 @@
+yeti-pg-ext (1.3.11p8) stable; urgency=medium
+  * CI/CD test
+ -- Dmytro Sinina <dmitry.s@yeti-switch.org>  Thu, 12 Dec 2024 01:14:44 +0300
+
 yeti-pg-ext (1.3.11p7) stable; urgency=medium
   * resolver: handle EINTR on rtt timeout waiting
  -- Michael Furmur <furmur@pm.me>  Wed, 17 Apr 2024 12:44:55 +0300
