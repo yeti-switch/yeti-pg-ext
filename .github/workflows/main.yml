@@ -49,7 +49,7 @@ jobs:
     container: debian:bookworm
     steps:
       - name: install curl
-        run: apt update && apt -y --no-install-recommends install curl ca-certificates ruby
+        run: apt update && apt -y --no-install-recommends install curl ca-certificates ruby gpg
 
       - name: clone yeti-pg-ext repo for ci/deploy.sh
         uses: actions/checkout@v4
