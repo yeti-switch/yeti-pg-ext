@@ -13,13 +13,13 @@ yeti-pg-ext is a part of project [Yeti]
 
 ## Installation via Package (Debian 12/bookworm)
 ```sh
-# apt install curl gnupg
+# apt install wget gnupg
 
-# echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list
-# curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+# echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+# wget -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
 
-# echo "deb [arch=amd64] http://pkg.yeti-switch.org/debian/bookworm 1.13 main" > /etc/apt/sources.list.d/yeti.list
-# curl https://pkg.yeti-switch.org/key.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/pkg.yeti-switch.org.gpg
+# echo "deb [arch=amd64] https://deb.yeti-switch.org/debian/1.13 bookworm main" > /etc/apt/sources.list.d/yeti.list
+# wget http://deb.yeti-switch.org/yeti.gpg -O /etc/apt/trusted.gpg.d/deb.yeti-switch.org.asc
 
 # apt update
 # apt install postgresql-16-yeti
@@ -32,14 +32,13 @@ yeti-pg-ext is a part of project [Yeti]
 ```sh
 $ git clone https://github.com/yeti-switch/yeti-pg-ext.git
 $ cd yeti-pg-ext
-$ make deb
 ```
 
 #### install build dependencies
 
 ```sh
-# echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list
-# curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+# echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+# wget -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
 # apt update
 # apt build-dep .
 ```
