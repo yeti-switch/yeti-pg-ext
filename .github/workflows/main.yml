@@ -52,6 +52,8 @@ jobs:
         with:
           name: pkg
 
+      - run: apt update
+
       - uses: yeti-switch/upload-debian-pkg-action@v2
         with:
           pkgs: '*.deb'
