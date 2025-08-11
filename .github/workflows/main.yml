@@ -8,7 +8,7 @@ on:
       - 'v*'
 
 jobs:
-  build:
+  deb12-build:
     runs-on: ubuntu-latest
     container: debian:bookworm
     steps:
@@ -38,25 +38,62 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: pkg
+          name: deb12-pkg
           path: '*.deb'
           retention-days: 1
-
-  deploy:
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    container: debian:bookworm
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: pkg
 
       - uses: yeti-switch/upload-debian-pkg-action@v2
         with:
           pkgs: '*.deb'
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          s3_component: bookworm
+          s3_access_key_id: ${{ secrets.DEB_AWS_ACCESS_KEY_ID }}
+          s3_secret_access_key: ${{ secrets.DEB_AWS_SECRET_ACCESS_KEY }}
+          s3_endpoint_url: ${{ secrets.DEB_AWS_ENDPOINT }}
+          s3_prefix: '1.14'
+        if: startsWith(github.ref, 'refs/tags/v')
+
+  deb13-build:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: install aux deps
+        run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make
+
+      - name: add pgdg pkg repo
+        run: >
+          echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt trixie-pgdg main" >> /etc/apt/sources.list.d/pgdg.list &&
+          curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+
+      - run: apt update && apt -y --no-install-recommends install postgresql-server-dev-all
+
+      - uses: actions/checkout@v4
+
+      - name: generate debian/control
+        run: pg_buildext updatecontrol && make -f debian/rules debian/control
+
+      - name: install build deps
+        run: apt -y --no-install-recommends build-dep .
+
+      - name: build package
+        run: make deb
+
+      - name: mv *.deb to the cwd
+        run: mv ../*.deb .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb13-pkg
+          path: '*.deb'
+          retention-days: 1
+
+      - uses: yeti-switch/upload-debian-pkg-action@v2
+        with:
+          pkgs: '*.deb'
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          s3_component: trixie
           s3_access_key_id: ${{ secrets.DEB_AWS_ACCESS_KEY_ID }}
           s3_secret_access_key: ${{ secrets.DEB_AWS_SECRET_ACCESS_KEY }}
           s3_endpoint_url: ${{ secrets.DEB_AWS_ENDPOINT }}
