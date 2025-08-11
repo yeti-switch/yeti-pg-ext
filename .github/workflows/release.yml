@@ -17,7 +17,7 @@ jobs:
         id: extract_tag
 
       - name: install aux deps
-        run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make
+        run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make devscripts
 
       - name: add pgdg pkg repo
         run: >
@@ -80,7 +80,7 @@ jobs:
         id: extract_tag
 
       - name: install aux deps
-        run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make
+        run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make devscripts
 
       - name: add pgdg pkg repo
         run: >
