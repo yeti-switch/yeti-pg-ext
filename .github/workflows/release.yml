@@ -56,7 +56,7 @@ jobs:
           pkgs: '*.deb'
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          s3_component: bookworm
+          s3_codename: bookworm
           s3_access_key_id: ${{ secrets.DEB_AWS_ACCESS_KEY_ID }}
           s3_secret_access_key: ${{ secrets.DEB_AWS_SECRET_ACCESS_KEY }}
           s3_endpoint_url: ${{ secrets.DEB_AWS_ENDPOINT }}
@@ -114,7 +114,7 @@ jobs:
           pkgs: '*.deb'
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
-          s3_component: trixie
+          s3_codename: trixie
           s3_access_key_id: ${{ secrets.DEB_AWS_ACCESS_KEY_ID }}
           s3_secret_access_key: ${{ secrets.DEB_AWS_SECRET_ACCESS_KEY }}
           s3_endpoint_url: ${{ secrets.DEB_AWS_ENDPOINT }}
