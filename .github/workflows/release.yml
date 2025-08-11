@@ -1,17 +1,21 @@
-name: build/deploy
+name: Release
 on:
-  pull_request:
-  push:
-    branches:
-      - "*"
-    tags:
-      - 'v*'
+  release:
+    types: [ published ]
 
 jobs:
   deb12-build:
     runs-on: ubuntu-latest
     container: debian:bookworm
     steps:
+
+      - name: Calculate version from ${{github.ref}}
+        env:
+          PKG_TAG: ${{github.ref}}
+        shell: bash
+        run: echo "##[set-output name=tag;]$(echo ${PKG_TAG#refs/tags/})"
+        id: extract_tag
+
       - name: install aux deps
         run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make
 
@@ -23,6 +27,9 @@ jobs:
       - run: apt update && apt -y --no-install-recommends install postgresql-server-dev-all
 
       - uses: actions/checkout@v4
+
+      - name: update changelog
+        run: rm debian/changelog && dch --create --package yeti-pg-ext --newversion "${{steps.extract_tag.outputs.tag}}" --distribution bookworm "Release ${{steps.extract_tag.outputs.tag}}, commit: ${{github.ref}}"
 
       - name: generate debian/control
         run: pg_buildext updatecontrol && make -f debian/rules debian/control
@@ -52,12 +59,19 @@ jobs:
           s3_secret_access_key: ${{ secrets.DEB_AWS_SECRET_ACCESS_KEY }}
           s3_endpoint_url: ${{ secrets.DEB_AWS_ENDPOINT }}
           s3_prefix: '1.14'
-        if: startsWith(github.ref, 'refs/tags/v')
 
   deb13-build:
     runs-on: ubuntu-latest
     container: debian:trixie
     steps:
+
+      - name: Calculate version from ${{github.ref}}
+        env:
+          PKG_TAG: ${{github.ref}}
+        shell: bash
+        run: echo "##[set-output name=tag;]$(echo ${PKG_TAG#refs/tags/})"
+        id: extract_tag
+
       - name: install aux deps
         run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make
 
@@ -69,6 +83,9 @@ jobs:
       - run: apt update && apt -y --no-install-recommends install postgresql-server-dev-all
 
       - uses: actions/checkout@v4
+
+      - name: update changelog
+        run: rm debian/changelog && dch --create --package yeti-pg-ext --newversion "${{steps.extract_tag.outputs.tag}}" --distribution trixie "Release ${{steps.extract_tag.outputs.tag}}, commit: ${{github.ref}}"
 
       - name: generate debian/control
         run: pg_buildext updatecontrol && make -f debian/rules debian/control
@@ -98,4 +115,4 @@ jobs:
           s3_secret_access_key: ${{ secrets.DEB_AWS_SECRET_ACCESS_KEY }}
           s3_endpoint_url: ${{ secrets.DEB_AWS_ENDPOINT }}
           s3_prefix: '1.14'
-        if: startsWith(github.ref, 'refs/tags/v')
+
