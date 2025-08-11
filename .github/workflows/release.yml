@@ -30,7 +30,7 @@ jobs:
 
       - name: update changelog
         run: rm debian/changelog && dch --create --package yeti-pg-ext --newversion "${{steps.extract_tag.outputs.tag}}" --distribution bookworm "Release ${{steps.extract_tag.outputs.tag}}, commit: ${{github.ref}}"
-
+        
       - name: generate debian/control
         run: pg_buildext updatecontrol && make -f debian/rules debian/control
 
