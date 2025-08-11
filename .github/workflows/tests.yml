@@ -1,0 +1,75 @@
+name: Test build
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+
+jobs:
+  deb12-build:
+    runs-on: ubuntu-latest
+    container: debian:bookworm
+    steps:
+      - name: install aux deps
+        run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make
+
+      - name: add pgdg pkg repo
+        run: >
+          echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" >> /etc/apt/sources.list.d/pgdg.list &&
+          curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+
+      - run: apt update && apt -y --no-install-recommends install postgresql-server-dev-all
+
+      - uses: actions/checkout@v4
+
+      - name: generate debian/control
+        run: pg_buildext updatecontrol && make -f debian/rules debian/control
+
+      - name: install build deps
+        run: apt -y --no-install-recommends build-dep .
+
+      - name: build package
+        run: make deb
+
+      - name: mv *.deb to the cwd
+        run: mv ../*.deb .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb12-pkg
+          path: '*.deb'
+          retention-days: 1
+
+  deb13-build:
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: install aux deps
+        run: apt update && apt -y --no-install-recommends install git ca-certificates curl gpg make
+
+      - name: add pgdg pkg repo
+        run: >
+          echo "deb [arch=amd64] http://apt.postgresql.org/pub/repos/apt trixie-pgdg main" >> /etc/apt/sources.list.d/pgdg.list &&
+          curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/apt.postgresql.org.gpg
+
+      - run: apt update && apt -y --no-install-recommends install postgresql-server-dev-all
+
+      - uses: actions/checkout@v4
+
+      - name: generate debian/control
+        run: pg_buildext updatecontrol && make -f debian/rules debian/control
+
+      - name: install build deps
+        run: apt -y --no-install-recommends build-dep .
+
+      - name: build package
+        run: make deb
+
+      - name: mv *.deb to the cwd
+        run: mv ../*.deb .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb13-pkg
+          path: '*.deb'
+          retention-days: 1
+
