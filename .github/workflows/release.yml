@@ -13,7 +13,7 @@ jobs:
         env:
           PKG_TAG: ${{github.ref}}
         shell: bash
-        run: echo "##[set-output name=tag;]$(echo ${PKG_TAG#refs/tags/})"
+        run: echo "tag=$(echo ${PKG_TAG#refs/tags/})" >> $GITHUB_OUTPUT
         id: extract_tag
 
       - name: install aux deps
@@ -71,7 +71,7 @@ jobs:
         env:
           PKG_TAG: ${{github.ref}}
         shell: bash
-        run: echo "##[set-output name=tag;]$(echo ${PKG_TAG#refs/tags/})"
+        run: echo "tag=$(echo ${PKG_TAG#refs/tags/})" >> $GITHUB_OUTPUT
         id: extract_tag
 
       - name: install aux deps
