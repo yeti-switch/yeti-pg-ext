@@ -5,7 +5,7 @@ set search_path TO public,yeti_ext;
 
 -- Load the TAP functions.
 -- TODO: find the way to include pgtap.sql for the related major version (:SERVER_VERSION_NUM/10000)
-\i /usr/share/postgresql/16/extension/pgtap.sql
+\i /usr/share/postgresql/18/extension/pgtap.sql
 
 -- regexp_replace_rand: text_in text, regexp_rule text, regexp_result text, keep_empty boolean DEFAULT false
 CREATE FUNCTION test_regexp_replace_rand_text_text_text_boolean() RETURNS SETOF TEXT AS $$ BEGIN
