@@ -69,7 +69,7 @@ jobs:
 
       - name: pgtap tests
         run: >
-          apt install postgresql-18 postgresql-client-18 postgresql-18-pgtap libtap-parser-sourcehandler-pgtap-perl &&
+          apt install -y --no-install-recommends postgresql-18 postgresql-client-18 postgresql-18-pgtap libtap-parser-sourcehandler-pgtap-perl &&
           dpkg -i postgresql-18-yeti_*_amd64.deb &&
           pg_createcluster -p 5454 18 test --start -- --auth=trust &&
           psql -p5454 -U postgres  -c 'create user yeti superuser;' -c 'create database yeti owner yeti;' &&
