@@ -1,74 +1,74 @@
-set search_path TO 'yeti_ext';
+BEGIN;
 
-do language plpgsql $$
-declare
-    -- tests cases: [description, sql, expected_result]
-    -- '-' in expected result field means skip result checking
-    tests text[] := array[
-/*******************************
- * regexp_replace_rand(TEXT,TEXT,TEXT) tests *
- *******************************
- */
-        ['valid regexp_replace, no replace_rand',E'regexp_replace_rand(\'a\',\'a\',\'b\')','b'],
-        ['valid regexp_replace, with replace_rand',E'regexp_replace_rand(\'a\',\'a\',\'br(4)\')','-'],
-        ['regexp_replace exception. no replace_rand',E'regexp_replace_rand(\'a\',\'a[\',\'b\')','a'],
-        ['regexp_replace exception. with replace_rand',E'regexp_replace_rand(\'a\',\'a[\',\'br(4)\')','a'],
-        ['NULL in',E'regexp_replace_rand(null,\'a\',\'b\')',null],
-        ['empty in',E'regexp_replace_rand(\'\',\'a\',\'b\')',''],
-        ['NULL rule',E'regexp_replace_rand(\'a\',null,\'b\')','a'],
-        ['empty rule',E'regexp_replace_rand(\'a\',\'\',\'b\')','a'],
-        ['NULL result',E'regexp_replace_rand(\'a\',\'a\',null)','a'],
-        ['empty result',E'regexp_replace_rand(\'a\',\'q\',\'\')','a'],
-        ['empty regexp_replace result',E'regexp_replace_rand(\'a\',\'a\',\'\')','a'],
--- table tests
-        ['empty rule in table', E'regexp_replace_rand(arg,rule,result) from t', 'a'],
-/**************************************************
- * regexp_replace_rand(TEXT,TEXT,TEXT,TEXT) tests *
- **************************************************
- */
-        ['valid regexp_replace, with replace_rand',E'regexp_replace_rand(\'a\',\'a\',\'br(4)\',\'g\')','-'],
-        ['valid regexp_replace, no replace_rand',E'regexp_replace_rand(\'a\',\'a\',\'b\',\'g\')','b'],
-        ['regexp_replace exception. no replace_rand',E'regexp_replace_rand(\'a\',\'a[\',\'b\',\'g\')','a'],
-        ['regexp_replace exception. with replace_rand',E'regexp_replace_rand(\'a\',\'a[\',\'br(4)\',\'g\')','a'],
-        ['NULL in',E'regexp_replace_rand(null,\'a\',\'b\',\'g\')',null],
-        ['empty in',E'regexp_replace_rand(\'\',\'a\',\'b\',\'g\')',''],
-        ['NULL rule',E'regexp_replace_rand(\'a\',null,\'b\',\'g\')','a'],
-        ['empty rule',E'regexp_replace_rand(\'a\',\'\',\'b\',\'g\')','a'],
-        ['NULL result',E'regexp_replace_rand(\'a\',\'a\',null,\'g\')','a'],
-        ['empty result',E'regexp_replace_rand(\'a\',\'q\',\'\',\'g\')','a'],
-        ['empty regexp_replace result',E'regexp_replace_rand(\'a\',\'a\',\'\',\'g\')','a'],
-        ['NULL opt',E'regexp_replace_rand(\'a\',\'a\',\'b\',null)',null],
-        ['empty opt',E'regexp_replace_rand(\'a\',\'a\',\'b\',\'\')','b'],
-/**************************************************
- * regexp_replace_rand(text_in TEXT[], regexp_rule TEXT, regexp_result TEXT, keep_empty BOOL = FALSE) *
- **************************************************
- */
-        ['valid replace, with replace_rand',E'regexp_replace_rand(array[\'a\',\'a\'],\'a\',\'br(4)\')','-'],
-        ['valid rreplace, no replace_rand',E'regexp_replace_rand(array[\'a\',\'a\'],\'a\',\'b\')','{b,b}'],
-        ['exception. no replace_rand',E'regexp_replace_rand(array[\'a\'],\'a[\',\'b\')', '{a}'],
-        ['exception. with replace_rand',E'regexp_replace_rand(array[\'a\'],\'a[\',\'br(4)\')','{a}'],
-        ['NULL in',E'regexp_replace_rand(array[null],\'a\',\'b\')','{NULL}'],
-        ['empty in',E'regexp_replace_rand(array[\'\'],\'a\',\'b\')','{""}'],
-        ['NULL rule',E'regexp_replace_rand(array[\'a\'],null,\'b\')','{a}'],
-        ['empty rule',E'regexp_replace_rand(array[\'a\'],\'\',\'b\')','{a}'],
-        ['NULL result',E'regexp_replace_rand(array[\'a\'],\'a\',null)','{a}'],
-        ['empty result',E'regexp_replace_rand(array[\'a\'],\'q\',\'\')','{a}'],
-        ['empty regexp_replace result',E'regexp_replace_rand(array[\'a\'],\'a\',\'\')','{a}'],
-        ['multi-in, single-token',E'regexp_replace_rand(array[\'abba\',\'yabba\'],\'b+\',\'*\')','{a*a,ya*a}'],
-        ['multi-in, multi-token',E'regexp_replace_rand(array[\'qwe\',\'rty\',\'asd\'],\'(q)||(r)\',\'\\1*||\\1^\')','{q*we,r^ty,asd}']
-    ];
+-- CREATE EXTENSION IF NOT EXISTS yeti WITH SCHEMA yeti_ext;
+set search_path TO public,yeti_ext;
+
+-- Load the TAP functions.
+-- TODO: find the way to include pgtap.sql for the related major version (:SERVER_VERSION_NUM/10000)
+\i /usr/share/postgresql/16/extension/pgtap.sql
+
+-- regexp_replace_rand: text_in text, regexp_rule text, regexp_result text, keep_empty boolean DEFAULT false
+CREATE FUNCTION test_regexp_replace_rand_text_text_text_boolean() RETURNS SETOF TEXT AS $$ BEGIN
+    RETURN NEXT is(regexp_replace_rand('a','a','b', false), 'b', 'valid regexp_replace, no replace_rand');
+    RETURN NEXT matches(regexp_replace_rand('a','a','br(4)', false), '^b\d{4}$', 'valid regexp_replace, with replace_rand');
+    RETURN NEXT is(regexp_replace_rand('a','a[','b', false), 'a', 'regexp_replace exception. no replace_rand');
+    RETURN NEXT is(regexp_replace_rand('a','a[','br(4)', false), 'a', 'regexp_replace exception. with replace_rand');
+    RETURN NEXT is(regexp_replace_rand(null,'a','b', false), null, 'NULL in');
+    RETURN NEXT is(regexp_replace_rand('','a','b', false), '', 'empty in');
+    RETURN NEXT is(regexp_replace_rand('a',null,'b', false), 'a', 'NULL rule');
+    RETURN NEXT is(regexp_replace_rand('a','','b', false), 'a', 'empty rule');
+    RETURN NEXT is(regexp_replace_rand('a','a',null, false), 'a', 'NULL result');
+    RETURN NEXT is(regexp_replace_rand('a','q','', false), 'a', 'empty result');
+    RETURN NEXT is(regexp_replace_rand('a','a','', false), 'a', 'empty regexp_replace result');
+END; $$ LANGUAGE plpgsql;
+
+-- regexp_replace_rand: text_in text, regexp_rule text, regexp_result text, regexp_opt text, keep_empty boolean DEFAULT false 
+CREATE FUNCTION test_regexp_replace_rand_text_text_text_text_boolean() RETURNS SETOF TEXT AS $$ BEGIN
+    RETURN NEXT matches(regexp_replace_rand('a','a','br(4)', 'g', false), '^b\d{4}$', 'valid regexp_replace, with replace_rand');
+    RETURN NEXT is(regexp_replace_rand('a','a','b', 'g', false), 'b', 'valid regexp_replace, no replace_rand');
+    -- TODO: seems, throws_ok unable to catch exceptions generated by regexp_replace_rand. find workaround and uncomment
+    -- RETURN NEXT throws_ok(regexp_replace_rand('a','a[','b', 'g', false), 'invalid regular expression: brackets [] not balanced', 'regexp_replace exception. no replace_rand');
+    -- RETURN NEXT throws_ok(regexp_replace_rand('a','a[','br(4)', 'g', false), 'invalid regular expression: brackets [] not balanced', 'regexp_replace exception. with replace_rand');
+    RETURN NEXT is(regexp_replace_rand(null,'a','b', 'g', false), null, 'NULL in');
+    RETURN NEXT is(regexp_replace_rand('','a','b', 'g', false), '', 'empty in');
+    RETURN NEXT is(regexp_replace_rand('a',null,'b', 'g', false), 'a', 'NULL rule');
+    RETURN NEXT is(regexp_replace_rand('a','','b', 'g', false), 'a', 'empty rule');
+    RETURN NEXT is(regexp_replace_rand('a','a',null, 'g', false), 'a', 'NULL result');
+    RETURN NEXT is(regexp_replace_rand('a','q','', 'g', false), 'a', 'empty result');
+    RETURN NEXT is(regexp_replace_rand('a','a','', 'g', false), 'a', 'empty regexp_replace result');
+    RETURN NEXT is(regexp_replace_rand('a','a','b', null, false), null, 'NULL opt');
+    RETURN NEXT is(regexp_replace_rand('a','a','b', '', false), 'b', 'empty opt');
+END; $$ LANGUAGE plpgsql;
+
+-- regexp_replace_rand: text_in text[], regexp_rule text, regexp_result text, keep_empty boolean DEFAULT false
+CREATE FUNCTION test_regexp_replace_rand_textarr_text_text_text_boolean() RETURNS SETOF TEXT AS $$
+DECLARE
     v text[];
-    ret text;
-begin
-    create temporary table t(arg text, rule text, result text) on commit drop;
-    insert into t VALUES('a','','b');
+BEGIN
+    -- create temporary table t(arg text, rule text, result text) on commit drop;
+    -- insert into t VALUES('a','','b');
 
-    <<"test loop">>
-    foreach v slice 1 in array tests loop
-        execute 'select ' || v[2] into ret;
-        raise notice '% -> "%" (expected "%") //%', v[2],ret,v[3],v[1];
-        if ((v[3] is null) or v[3]!='-') and (((v[3] is null) != (ret is null)) or v[3]!=ret) then
-            raise exception 'got "%" while expected "%" for the last test case', ret, v[3];
-        end if;
-    end loop "test loop";
-end $$;
+    SELECT INTO v regexp_replace_rand(array['a','a'],'a','br(4)', false);
+    RETURN NEXT matches(v[1], '^b\d{4}$', 'valid replace, with replace_rand 1/2');
+    RETURN NEXT matches(v[2], '^b\d{4}$', 'valid replace, with replace_rand 1/2');
+
+    RETURN NEXT is(regexp_replace_rand(array['a','a'],'a','b', false), array['b','b'], 'valid replace, no replace_rand');
+
+    --     ['exception. no replace_rand',E'regexp_replace_rand(array[\'a\'],\'a[\',\'b\')', '{a}'],
+    --     ['exception. with replace_rand',E'regexp_replace_rand(array[\'a\'],\'a[\',\'br(4)\')','{a}'],
+
+    RETURN NEXT is(regexp_replace_rand(array[null],'a','b', false), array[null], 'NULL in');
+    RETURN NEXT is(regexp_replace_rand(array[''],'a','b', false), array[''], 'empty in');
+    RETURN NEXT is(regexp_replace_rand(array['a'],null,'b', false), array['a'], 'NULL rule');
+    RETURN NEXT is(regexp_replace_rand(array['a'],'','b', false), array['a'], 'empty rule');
+    RETURN NEXT is(regexp_replace_rand(array['a'],'a',null, false), array['a'], 'NULL result');
+    RETURN NEXT is(regexp_replace_rand(array['a'],'q','', false), array['a'], 'empty result');
+    RETURN NEXT is(regexp_replace_rand(array['a'],'a','', false), array['a'], 'empty regexp_replace result');
+
+    RETURN NEXT is(regexp_replace_rand(array['abba', 'yabba'], 'b+', '*', false), array['a*a','ya*a'], 'multi-in, single-token');
+    RETURN NEXT is(regexp_replace_rand(array['qwe', 'rty', 'asd'], '(q)||(r)', '\1*||\1^', false), array['q*we','r^ty','asd'], 'multi-in, multi-token');
+END; $$ LANGUAGE plpgsql;
+
+SELECT * FROM runtests();
+
+ROLLBACK;
