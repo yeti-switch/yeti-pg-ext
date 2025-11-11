@@ -67,6 +67,15 @@ jobs:
       - name: mv *.deb to the cwd
         run: mv ../*.deb .
 
+      - name: pgtap tests
+        run: >
+          apt install postgresql-18 postgresql-client-18 postgresql-18-pgtap libtap-parser-sourcehandler-pgtap-perl &&
+          dpkg -i postgresql-18-yeti_*_amd64.deb &&
+          pg_createcluster -p 5454 18 test --start -- --auth=trust &&
+          psql -p5454 -U postgres  -c 'create user yeti superuser;' -c 'create database yeti owner yeti;' &&
+          psql -p5454 -U yeti -c 'create schema yeti_ext;' -c 'create extension yeti with schema yeti_ext;' &&
+          make -f tests/Makefile
+
       - uses: actions/upload-artifact@v4
         with:
           name: deb13-pkg
