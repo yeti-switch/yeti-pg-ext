@@ -7,7 +7,7 @@ set search_path TO public,yeti_ext;
 -- TODO: find the way to include pgtap.sql for the related major version (:SERVER_VERSION_NUM/10000)
 \i /usr/share/postgresql/16/extension/pgtap.sql
 
--- OR
+-- B_IN_A
 CREATE FUNCTION test_tags_compare_or() RETURNS SETOF TEXT AS $$ BEGIN
     -- a: notag
     RETURN NEXT is(tag_compare(array[]::integer[], array[]::integer[]), 3, 'notags_notags');
@@ -64,7 +64,7 @@ CREATE FUNCTION test_tags_compare_or() RETURNS SETOF TEXT AS $$ BEGIN
     RETURN NEXT is(tag_compare(array[NULL]::integer[], array[2]),           1, 'any_2');
 END; $$ LANGUAGE plpgsql;
 
--- AND
+-- MUTUAL
 CREATE FUNCTION test_tags_compare_and() RETURNS SETOF TEXT AS $$ BEGIN
     -- a: notag
     RETURN NEXT is(tag_compare(array[]::integer[], array[]::integer[], 1::smallint), 3, 'notags_notags');

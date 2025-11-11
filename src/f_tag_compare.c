@@ -38,8 +38,8 @@ Datum tag_compare(PG_FUNCTION_ARGS)
     };
 
     enum matching_mode {
-        MATCH_MODE_OR = 0,
-        MATCH_MODE_AND
+        MATCH_MODE_B_IN_A = 0,
+        MATCH_MODE_MUTUAL
     };
 
     ArrayType *a, *b;
@@ -57,24 +57,23 @@ Datum tag_compare(PG_FUNCTION_ARGS)
         PG_RETURN_INT32(RET_NOT_MATCHED);
 
     if(PG_NARGS() <= ARG_MATCHING_MODE) {
-        match_mode = MATCH_MODE_OR;
+        match_mode = MATCH_MODE_B_IN_A;
     } else {
-        if(PG_ARGISNULL(ARG_MATCHING_MODE)) match_mode = MATCH_MODE_OR;
+        if(PG_ARGISNULL(ARG_MATCHING_MODE)) match_mode = MATCH_MODE_B_IN_A;
         else match_mode = PG_GETARG_INT16(ARG_MATCHING_MODE);
     }
 
     switch(match_mode) {
-    case MATCH_MODE_OR:
-    case MATCH_MODE_AND:
+    case MATCH_MODE_B_IN_A:
+    case MATCH_MODE_MUTUAL:
+        a = PG_GETARG_ARRAYTYPE_P(ARG_A);
+        b = PG_GETARG_ARRAYTYPE_P(ARG_B);
         break;
     default:
         err("unknown matching mode: %d",match_mode);
     }
 
-    a = PG_GETARG_ARRAYTYPE_P(ARG_A);
     a_len = ArrayGetNItems(ARR_NDIM(a), ARR_DIMS(a));
-
-    b = PG_GETARG_ARRAYTYPE_P(ARG_B);
     b_len = ArrayGetNItems(ARR_NDIM(b), ARR_DIMS(b));
 
     if(0==a_len) {
@@ -109,7 +108,7 @@ Datum tag_compare(PG_FUNCTION_ARGS)
         if(!set_contains_value(aset,apos,v)) {
             if(a_has_null) {
                 ret = RET_MATCHED_WITH_NULL;
-                if(match_mode != MATCH_MODE_AND)
+                if(match_mode != MATCH_MODE_MUTUAL)
                     break;
             } else {
                 ret = RET_NOT_MATCHED;
@@ -124,7 +123,7 @@ Datum tag_compare(PG_FUNCTION_ARGS)
         ret = RET_MATCHED_EXACTLY;
     }
 
-    if(match_mode == MATCH_MODE_AND && (apos > -1)) {
+    if(match_mode == MATCH_MODE_MUTUAL && (apos > -1)) {
         //additional check for aset entries existence in bset
         d = aset+apos;
         do {
