@@ -39,7 +39,8 @@ Datum tag_compare(PG_FUNCTION_ARGS)
 
     enum matching_mode {
         MATCH_MODE_B_IN_A = 0,
-        MATCH_MODE_MUTUAL
+        MATCH_MODE_MUTUAL,
+        MATCH_MODE_A_IN_B
     };
 
     ArrayType *a, *b;
@@ -68,6 +69,10 @@ Datum tag_compare(PG_FUNCTION_ARGS)
     case MATCH_MODE_MUTUAL:
         a = PG_GETARG_ARRAYTYPE_P(ARG_A);
         b = PG_GETARG_ARRAYTYPE_P(ARG_B);
+        break;
+    case MATCH_MODE_A_IN_B:
+        a = PG_GETARG_ARRAYTYPE_P(ARG_B);
+        b = PG_GETARG_ARRAYTYPE_P(ARG_A);
         break;
     default:
         err("unknown matching mode: %d",match_mode);

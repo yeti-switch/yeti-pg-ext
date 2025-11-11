@@ -8,7 +8,7 @@ set search_path TO public,yeti_ext;
 \i /usr/share/postgresql/16/extension/pgtap.sql
 
 -- B_IN_A
-CREATE FUNCTION test_tags_compare_or() RETURNS SETOF TEXT AS $$ BEGIN
+CREATE FUNCTION test_tags_compare_b_in_a() RETURNS SETOF TEXT AS $$ BEGIN
     -- a: notag
     RETURN NEXT is(tag_compare(array[]::integer[], array[]::integer[]), 3, 'notags_notags');
     RETURN NEXT is(tag_compare(array[]::integer[], array[1]),           0, 'notags_1');
@@ -65,7 +65,7 @@ CREATE FUNCTION test_tags_compare_or() RETURNS SETOF TEXT AS $$ BEGIN
 END; $$ LANGUAGE plpgsql;
 
 -- MUTUAL
-CREATE FUNCTION test_tags_compare_and() RETURNS SETOF TEXT AS $$ BEGIN
+CREATE FUNCTION test_tags_compare_mutual() RETURNS SETOF TEXT AS $$ BEGIN
     -- a: notag
     RETURN NEXT is(tag_compare(array[]::integer[], array[]::integer[], 1::smallint), 3, 'notags_notags');
     RETURN NEXT is(tag_compare(array[]::integer[], array[1], 1::smallint),           0, 'notags_1');
@@ -119,6 +119,12 @@ CREATE FUNCTION test_tags_compare_and() RETURNS SETOF TEXT AS $$ BEGIN
     RETURN NEXT is(tag_compare(array[NULL]::integer[], array[1], 1::smallint),           1, 'any_1');
     RETURN NEXT is(tag_compare(array[NULL]::integer[], array[1,2], 1::smallint),         1, 'any_12');
     RETURN NEXT is(tag_compare(array[NULL]::integer[], array[2], 1::smallint),           1, 'any_2');
+END; $$ LANGUAGE plpgsql;
+
+-- B_IN_A
+CREATE FUNCTION test_tags_compare_a_in_b() RETURNS SETOF TEXT AS $$ BEGIN
+    -- mode 2 is identical to mode 0 but swaps a,b parameters internally. so it's enough to check one basic op
+    RETURN NEXT is(tag_compare(array[1], array[1,2], 2::smallint), 2, '1_12');
 END; $$ LANGUAGE plpgsql;
 
 SELECT * FROM runtests();
