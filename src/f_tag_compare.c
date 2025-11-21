@@ -40,7 +40,7 @@ Datum tag_compare(PG_FUNCTION_ARGS)
     enum matching_mode {
         MATCH_MODE_B_IN_A = 0,
         MATCH_MODE_MUTUAL,
-        MATCH_MODE_A_IN_B
+        MATCH_MODE_INTERSECTION
     };
 
     ArrayType *a, *b;
@@ -67,16 +67,14 @@ Datum tag_compare(PG_FUNCTION_ARGS)
     switch(match_mode) {
     case MATCH_MODE_B_IN_A:
     case MATCH_MODE_MUTUAL:
-        a = PG_GETARG_ARRAYTYPE_P(ARG_A);
-        b = PG_GETARG_ARRAYTYPE_P(ARG_B);
-        break;
-    case MATCH_MODE_A_IN_B:
-        a = PG_GETARG_ARRAYTYPE_P(ARG_B);
-        b = PG_GETARG_ARRAYTYPE_P(ARG_A);
+    case MATCH_MODE_INTERSECTION:
         break;
     default:
         err("unknown matching mode: %d",match_mode);
     }
+
+    a = PG_GETARG_ARRAYTYPE_P(ARG_A);
+    b = PG_GETARG_ARRAYTYPE_P(ARG_B);
 
     a_len = ArrayGetNItems(ARR_NDIM(a), ARR_DIMS(a));
     b_len = ArrayGetNItems(ARR_NDIM(b), ARR_DIMS(b));
@@ -113,12 +111,16 @@ Datum tag_compare(PG_FUNCTION_ARGS)
         if(!set_contains_value(aset,apos,v)) {
             if(a_has_null) {
                 ret = RET_MATCHED_WITH_NULL;
-                if(match_mode != MATCH_MODE_MUTUAL)
+                if(match_mode == MATCH_MODE_B_IN_A)
                     break;
             } else {
                 ret = RET_NOT_MATCHED;
-                break;
+                if(match_mode != MATCH_MODE_INTERSECTION) {
+                    break;
+                }
             }
+        } else if(match_mode==MATCH_MODE_INTERSECTION) {
+            return RET_MATCHED_EXACTLY;
         }
         if(!set_contains_value(bset,bpos,v))
             bset[++bpos] = v;
