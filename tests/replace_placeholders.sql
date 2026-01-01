@@ -14,6 +14,7 @@ CREATE FUNCTION test_replace_placeholders_textarray() RETURNS SETOF TEXT AS $$ B
     RETURN NEXT is(process_templates(NULL, '{}'), NULL, 'NULL templates. return NULL');
     RETURN NEXT is(process_templates(array['qwe'], '{}'), array['qwe'], 'no placeholders. return input');
     RETURN NEXT is(process_templates(array['qwe'], NULL), array['qwe'], 'NULL vars. return input');
+    RETURN NEXT is(process_templates(array[]::text[], '{}'), array[]::text[], 'empty array input. return empty array');
 
     RETURN NEXT is(process_templates(array['}}qwe{{rty{{'], '{}'), array['}}qwerty{{'], 'unbalanced placeholders. keep closing. remove first opening');
 
