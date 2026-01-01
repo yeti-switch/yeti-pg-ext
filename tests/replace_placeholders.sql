@@ -20,7 +20,7 @@ CREATE FUNCTION test_replace_placeholders_textarray() RETURNS SETOF TEXT AS $$ B
 
     RETURN NEXT is(process_templates(array['q{{nx}}e'], '{"w":42}'), array['qe'], 'wrong placeholder name');
     RETURN NEXT is(process_templates(array['q{{vars.}}e'], '{"w":42}'), array['qe'], 'incomplete placeholder name');
-    RETURN NEXT is(process_templates(array['q{{vars.nx}}e'], '{"w":42}'), array['qe'], 'nx placeholder name');
+    RETURN NEXT is(process_templates(array['q{{vars.nx}}e'], '{"w":42}'), array['qnulle'], 'nx placeholder name');
 
     RETURN NEXT is(process_templates(array['q{{vars.w}}e'], '{"w":42}'), array['q42e'], 'single replacement');
 

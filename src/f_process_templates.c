@@ -165,7 +165,8 @@ Datum replace_placeholders(Datum tpl, Jsonb *values)
             st = ST_NORMAL;
 
             if(NULL==v_ptr) {
-                //ignore nx variables
+                //append with 'null' fop nx variables
+                appendStringInfoString(&sinfo, "null");
                 break;
             }
 
