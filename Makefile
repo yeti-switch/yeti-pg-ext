@@ -10,8 +10,8 @@ PGVER = $(shell echo $(VERSION) | awk -F. '{ print $$1*100+$$2 }')
 
 PG_CPPFLAGS  = -DPGVER=$(PGVER)
 
-SHLIB_LINK = $(shell pkg-config --libs nanomsg)
-PG_CFLAGS = $(shell pkg-config --cflags nanomsg)
+#SHLIB_LINK = $(shell pkg-config --libs nanomsg)
+#PG_CFLAGS = $(shell pkg-config --cflags nanomsg)
 
 PG_CONFIG ?= pg_config
 PGXS = $(shell $(PG_CONFIG) --pgxs)
