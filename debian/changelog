@@ -1,5 +1,5 @@
 yeti-pg-ext (1.4.0p1) stable; urgency=medium
-  * process_templates: resolve nx vars to 'null'
+  * process_templates: resolve nx and invalid vars to 'null'
  -- Michael Furmur <furmur@pm.me>  Thu, 01 Jan 2026 23:46:03 +0200
 
 yeti-pg-ext (1.4.0) stable; urgency=medium

@@ -148,6 +148,9 @@ Datum replace_placeholders(Datum tpl, Jsonb *values)
             if(((tmp-tpl_ptr) <= sizeof(prefix))
                || (0!=memcmp(tpl_ptr,prefix,sizeof(prefix))))
             {
+                //append with 'null' for invalid placeholders
+                appendStringInfoString(&sinfo, "null");
+
                 tpl_ptr = tmp + sizeof(placeholder_end);
                 st = ST_NORMAL;
                 break;
@@ -165,7 +168,7 @@ Datum replace_placeholders(Datum tpl, Jsonb *values)
             st = ST_NORMAL;
 
             if(NULL==v_ptr) {
-                //append with 'null' fop nx variables
+                //append with 'null' for nx variables
                 appendStringInfoString(&sinfo, "null");
                 break;
             }
