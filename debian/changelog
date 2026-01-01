@@ -1,3 +1,8 @@
+yeti-pg-ext (1.4.0) stable; urgency=medium
+  * add process_templates(templates text[], vars jsonb) RETURNS text[]
+  * add process_templates(template text, vars jsonb) RETURNS text
+ -- Michael Furmur <furmur@pm.me>  Thu, 01 Jan 2026 23:22:38 +0200
+
 yeti-pg-ext (1.3.17) stable; urgency=medium
   * tag_compare: rewrite mode:2 to work as sets intersection checking
  -- Michael Furmur <furmur@pm.me>  Fri, 21 Nov 2025 22:30:51 +0200
