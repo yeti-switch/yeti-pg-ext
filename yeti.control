@@ -1,5 +1,5 @@
 # yeti extension
 comment = 'helper functions for YETI project'
-default_version = '1.4.0'
+default_version = '1.14.0'
 module_pathname = '$libdir/yeti_pg_ext'
 relocatable = true
