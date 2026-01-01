@@ -103,7 +103,11 @@ Datum replace_placeholders(Datum tpl, Jsonb *values)
         ST_PLACEHOLDER,
     } st = ST_NORMAL;
 
+#if PGVER >= 1800
     initStringInfoExt(&sinfo, INITIAL_BUF_SIZE);
+#else
+    initStringInfo(&sinfo);
+#endif
 
     while(tpl_ptr < tpl_end) {
         switch(st) {
