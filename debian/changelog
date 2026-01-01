@@ -1,3 +1,7 @@
+yeti-pg-ext (1.4.0p1) stable; urgency=medium
+  * process_templates: resolve nx vars to 'null'
+ -- Michael Furmur <furmur@pm.me>  Thu, 01 Jan 2026 23:46:03 +0200
+
 yeti-pg-ext (1.4.0) stable; urgency=medium
   * add process_templates(templates text[], vars jsonb) RETURNS text[]
   * add process_templates(template text, vars jsonb) RETURNS text
