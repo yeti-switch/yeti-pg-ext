@@ -1,3 +1,7 @@
+yeti-pg-ext (1.14.0p1) stable; urgency=medium
+  * process_templates: resolve nx/invalid/null vars to empty string
+ -- Michael Furmur <furmur@pm.me>  Fri, 02 Jan 2026 13:50:20 +0200
+
 yeti-pg-ext (1.14.0) stable; urgency=medium
   * fix versioning
  -- Michael Furmur <furmur@pm.me>  Fri, 02 Jan 2026 00:19:48 +0200
