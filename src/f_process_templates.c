@@ -148,9 +148,7 @@ Datum replace_placeholders(Datum tpl, Jsonb *values)
             if(((tmp-tpl_ptr) <= sizeof(prefix))
                || (0!=memcmp(tpl_ptr,prefix,sizeof(prefix))))
             {
-                //append with 'null' for invalid placeholders
-                appendStringInfoString(&sinfo, "null");
-
+                //skip invalid placeholders
                 tpl_ptr = tmp + sizeof(placeholder_end);
                 st = ST_NORMAL;
                 break;
@@ -168,8 +166,7 @@ Datum replace_placeholders(Datum tpl, Jsonb *values)
             st = ST_NORMAL;
 
             if(NULL==v_ptr) {
-                //append with 'null' for nx variables
-                appendStringInfoString(&sinfo, "null");
+                //skip nx variables
                 break;
             }
 
@@ -177,7 +174,7 @@ Datum replace_placeholders(Datum tpl, Jsonb *values)
             //see: src/backend/utils/adt/jsonb.c:JsonbUnquote()
             switch(v.type) {
             case jbvNull:
-                appendStringInfoString(&sinfo, "null");
+                //skip 'null' variables
                 break;
             case jbvString:
                 appendBinaryStringInfoNT(&sinfo,
